@@ -11,7 +11,10 @@ const CONFIG = {
   data: {
     buildings: "data/edificios.geojson",
     parcels: "data/parcelas.geojson",
+    wcs: "data/wcs.geojson",
     limit: "data/limite.geojson",
+    parks: "data/parques.geojson",
+    gates: "data/bilheteiras.geojson",
   },
 
   map: {
@@ -38,6 +41,12 @@ const state = {
   buildingsLayer: null,
 
   parcelsLayer: null,
+
+  wcsLayer: null,
+
+  parksLayer: null,
+
+  gatesLayer: null,
 
   allFeatures: [],
 
@@ -160,7 +169,7 @@ function initializeMap() {
 
       weight: 1.5,
 
-      fillColor: "#3b82f6",
+      fillColor: "rgba(37, 99, 235, 0.20)",
 
       fillOpacity: 0.35,
     },
@@ -176,18 +185,81 @@ function initializeMap() {
 
   state.parcelsLayer = L.geoJSON(null, {
     style: {
-      color: "#16a34a",
+      color: "#f59e0b",
 
       weight: 1,
 
-      fillColor: "#22c55e",
+      fillColor: "rgba(245, 158, 11, 0.40)",
 
       fillOpacity: 0.12,
     },
 
     onEachFeature: handleParcelFeature,
   }).addTo(state.map);
+
+  /*
+   * =====================================================
+   * WCs
+   * =====================================================
+   */
+
+  state.wcsLayer = L.geoJSON(null, {
+    style: {
+      color: "#a855f7",
+
+      weight: 1,
+
+      fillColor: "rgba(168, 85, 247, 0.40)",
+
+      fillOpacity: 0.12,
+    },
+
+    onEachFeature: handleWCFeature,
+  }).addTo(state.map);
+
+  /*
+   * =====================================================
+   * PARQUES
+   * =====================================================
+   */
+
+  state.parksLayer = L.geoJSON(null, {
+    style: {
+      color: "#0ea5e9",
+
+      weight: 1,
+
+      fillColor: "rgba(14, 165, 233, 0.30)",
+
+      fillOpacity: 0.12,
+    },
+
+    onEachFeature: handleParkFeature,
+  }).addTo(state.map);
+
+  /*
+   * =====================================================
+   * BILHETEIRAS
+   * =====================================================
+   */
+
+  state.gatesLayer = L.geoJSON(null, {
+    style: {
+      color: "#ef4444",
+
+      weight: 1,
+
+      fillColor: "rgba(239, 68, 68, 0.30)",
+
+      fillOpacity: 0.12,
+    },
+
+    onEachFeature: handleGateFeature,
+  }).addTo(state.map);
+
 }
+
+
 
 /* =========================================================
    EVENTOS DO MAPA
@@ -217,7 +289,7 @@ function handleBuildingFeature(feature, layer) {
 function handleParcelFeature(feature, layer) {
   layer.on({
     click: () => {
-      selectFeature(feature, layer, "Parcela");
+      selectFeature(feature, layer, "Stand");
     },
 
     mouseover: () => {
@@ -235,6 +307,69 @@ function handleParcelFeature(feature, layer) {
   });
 }
 
+function handleWCFeature(feature, layer) {
+  layer.on({
+    click: () => {
+      selectFeature(feature, layer, "WC");
+    },
+
+    mouseover: () => {
+      layer.setStyle({
+        weight: 3,
+        fillOpacity: 0.25,
+      });
+    },
+
+    mouseout: () => {
+      if (state.highlightedLayer !== layer) {
+        state.wcsLayer.resetStyle(layer);
+      }
+    },
+  });
+}
+
+function handleGateFeature(feature, layer) {
+  layer.on({
+    click: () => {
+      selectFeature(feature, layer, "Bilheteira");
+    },
+
+    mouseover: () => {
+      layer.setStyle({
+        weight: 3,
+        fillOpacity: 0.25,
+      });
+    },
+
+    mouseout: () => {
+      if (state.highlightedLayer !== layer) {
+        state.gatesLayer.resetStyle(layer);
+      }
+    },
+  });
+}
+
+function handleParkFeature(feature, layer) {
+  layer.on({
+    click: () => {
+      selectFeature(feature, layer, "P. Estacionamento");
+    },
+
+    mouseover: () => {
+      layer.setStyle({
+        weight: 3,
+        fillOpacity: 0.25,
+      });
+    },
+
+    mouseout: () => {
+      if (state.highlightedLayer !== layer) {
+        state.parksLayer.resetStyle(layer);
+      }
+    },
+  });
+}
+
 /* =========================================================
    CARREGAMENTO DOS GEOJSON
    ========================================================= */
@@ -245,13 +380,19 @@ async function loadGeoJSONData() {
   hideError();
 
   try {
-    const [buildingsResponse, parcelsResponse, limitResponse] =
+    const [buildingsResponse, parcelsResponse, limitResponse, wcsResponse, gatesResponse, parksResponse] =
       await Promise.all([
         fetch(CONFIG.data.buildings),
 
         fetch(CONFIG.data.parcels),
 
         fetch(CONFIG.data.limit),
+
+        fetch(CONFIG.data.wcs),
+
+        fetch(CONFIG.data.gates),
+
+        fetch(CONFIG.data.parks),
       ]);
 
     if (!buildingsResponse.ok) {
@@ -266,11 +407,29 @@ async function loadGeoJSONData() {
       throw new Error("Não foi possível carregar limite.geojson");
     }
 
+    if (!wcsResponse.ok) {
+      throw new Error("Não foi possível carregar wcs.geojson");
+    }
+
+    if (!gatesResponse.ok) {
+      throw new Error("Não foi possível carregar gates.geojson");
+    }
+
+    if (!parksResponse.ok) {
+      throw new Error("Não foi possível carregar parks.geojson");
+    }
+
     const buildings = await buildingsResponse.json();
 
     const parcels = await parcelsResponse.json();
 
     const limit = await limitResponse.json();
+
+    const wcs = await wcsResponse.json();
+
+    const gates = await gatesResponse.json();
+
+    const parks = await parksResponse.json();
 
     state.navigation.limit = limit;
 
@@ -282,6 +441,12 @@ async function loadGeoJSONData() {
 
     state.parcelsLayer.addData(parcels);
 
+    state.wcsLayer.addData(wcs);
+
+    state.gatesLayer.addData(gates);
+
+    state.parksLayer.addData(parks);
+
     /*
      * Registra todas as features
      * no índice de pesquisa.
@@ -290,6 +455,12 @@ async function loadGeoJSONData() {
     registerFeatures(buildings, "Edifício", state.buildingsLayer);
 
     registerFeatures(parcels, "Parcela", state.parcelsLayer);
+
+    registerFeatures(wcs, "WC", state.wcsLayer);
+
+    registerFeatures(gates, "Bilheteira", state.gatesLayer);
+
+    registerFeatures(parks, "P. Estacionamento", state.parksLayer);
 
     /*
      * Ajusta o mapa para mostrar
@@ -346,6 +517,18 @@ function fitMapToData() {
     layers.push(state.parcelsLayer);
   }
 
+  if (state.wcsLayer && state.wcsLayer.getLayers().length) {
+    layers.push(state.wcsLayer);
+  }
+
+  if (state.gatesLayer && state.gatesLayer.getLayers().length) {
+    layers.push(state.gatesLayer);
+  }
+
+  if (state.parksLayer && state.parksLayer.getLayers().length) {
+    layers.push(state.parksLayer);
+  }
+
   if (!layers.length) {
     return;
   }
@@ -386,7 +569,6 @@ function searchFeatures(query) {
         return `${key} ${value}`;
       })
       .join(" ");
-
     const normalizedText = normalizeText(searchableText);
 
     if (normalizedText.includes(normalizedQuery)) {
@@ -516,6 +698,8 @@ function getFeatureTitle(feature, type, index) {
 
     "codigo",
 
+    "uso",
+
     "código",
 
     "id",
@@ -555,7 +739,7 @@ function getFeatureTitle(feature, type, index) {
 
 function getFeatureDescription(feature) {
   const properties = feature.properties || {};
-
+  console.log("properties", properties)
   const entries = Object.entries(properties);
 
   if (!entries.length) {
@@ -563,8 +747,15 @@ function getFeatureDescription(feature) {
   }
 
   return entries
+    .filter(([key, value]) =>
+        value !== null &&
+        value !== undefined &&
+        String(value).trim() !== ""
+    )
     .slice(0, 3)
-    .map(([key, value]) => `${key}: ${value}`)
+    .map(([key, value]) =>
+        `${translateKey(key)}: ${value}`
+    )
     .join(" • ");
 }
 
@@ -677,7 +868,7 @@ function selectFeature(feature, layer, type) {
 /* =========================================================
    POPUP
    ========================================================= */
-const visibleProps = ["code", "name", "description"];
+const visibleProps = ["code", "name", "description", "uso"];
 
 function createPopupContent(feature, type) {
   const properties = feature.properties || {};
@@ -965,8 +1156,35 @@ function initializeEvents() {
     .addEventListener("change", (event) => {
       toggleLayer(state.parcelsLayer, event.target.checked);
     });
+  
+    /*
+   * WCs
+   */
+  document
+    .getElementById("wcsToggle")
+    .addEventListener("change", (event) => {
+      toggleLayer(state.wcsLayer, event.target.checked);
+    });
+    
+  /*
+   * Bilheteiras
+   */
+  document
+    .getElementById("gatesToggle")
+    .addEventListener("change", (event) => {
+      toggleLayer(state.gatesLayer, event.target.checked);
+    });
 
   /*
+   * Parques
+   */
+  document
+    .getElementById("parkingToggle")
+    .addEventListener("change", (event) => {
+      toggleLayer(state.parksLayer, event.target.checked);
+    });
+  
+    /*
    * Não fechar o painel quando
    * clicar dentro dele.
    */
