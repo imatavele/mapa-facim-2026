@@ -454,7 +454,7 @@ async function loadGeoJSONData() {
 
     registerFeatures(buildings, "Edifício", state.buildingsLayer);
 
-    registerFeatures(parcels, "Parcela", state.parcelsLayer);
+    registerFeatures(parcels, "Stand", state.parcelsLayer);
 
     registerFeatures(wcs, "WC", state.wcsLayer);
 
@@ -1407,7 +1407,7 @@ function getNavigationTypeLabel(type) {
   }
 
   if (type === "parcel") {
-    return "Parcela";
+    return "Stand";
   }
 
   return type;
