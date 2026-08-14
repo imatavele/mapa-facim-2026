@@ -707,6 +707,10 @@ function getFeatureTitle(feature, type, index) {
     "fid",
 
     "code",
+
+    "expositor",
+
+    "pavilhao",
   ];
 
   for (const field of preferredFields) {
@@ -868,7 +872,7 @@ function selectFeature(feature, layer, type) {
 /* =========================================================
    POPUP
    ========================================================= */
-const visibleProps = ["code", "name", "description", "uso"];
+const visibleProps = ["code", "name", "description", "uso", "pavilhao", "expositor"];
 
 function createPopupContent(feature, type) {
   const properties = feature.properties || {};
