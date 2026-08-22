@@ -1,0 +1,58 @@
+<div class="map-layers-control">
+    <button id="layersButton" class="layers-button" type="button" aria-label="Mapas e camadas" title="Mapas e camadas">
+        ◈
+    </button>
+
+    <div id="layersPanel" class="layers-panel hidden">
+        <div class="layers-panel-title">Mapa</div>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="osm" checked />
+            <span>OpenStreetMap</span>
+        </label>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="cartoLight" />
+            <span>Carto Light</span>
+        </label>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="cartoDark" />
+            <span>Carto Dark</span>
+        </label>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="satellite" />
+            <span>Esri Satellite</span>
+        </label>
+
+        <div class="layers-divider"></div>
+
+        <div class="layers-panel-title">Camadas</div>
+
+        <label class="layer-option">
+            <input id="parcelsToggle" type="checkbox" checked />
+            <span>Stands</span>
+        </label>
+
+        <label class="layer-option">
+            <input id="gatesToggle" type="checkbox" checked />
+            <span>Bilheteiras</span>
+        </label>
+
+        <label class="layer-option">
+            <input id="wcsToggle" type="checkbox" checked />
+            <span>WCs</span>
+        </label>
+
+        <label class="layer-option">
+            <input id="buildingsToggle" type="checkbox" checked />
+            <span>Edifícios</span>
+        </label>
+
+        <label class="layer-option">
+            <input id="parkingToggle" type="checkbox" checked />
+            <span>P. Estacionamento</span>
+        </label>
+    </div>
+</div>

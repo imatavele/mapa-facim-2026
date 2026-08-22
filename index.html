@@ -1,346 +1,94 @@
 <!doctype html>
 <html lang="pt">
-  <head>
-    <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+<head>
+  <meta charset="UTF-8" />
 
-    <meta
-      name="description"
-      content="Mapa da FACIM 2026 - Navegação e localização de edifícios, parcelas e espaços da FACIM."
-    />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <meta name="theme-color" content="#0f172a" />
+  <meta name="description"
+    content="Mapa da FACIM 2026 - Navegação e localização de edifícios, parcelas e espaços da FACIM." />
 
-    <title>Mapa da FACIM 2026</title>
+  <meta name="theme-color" content="#0f172a" />
 
-    <!-- Leaflet -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+  <title>Mapa da FACIM 2026</title>
 
-    <!-- CSS da aplicação -->
-    <link rel="stylesheet" href="assets/css/app.css" />
-  </head>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <body>
-    <!-- Aplicação -->
-    <div id="app">
-      <!-- Cabeçalho -->
-      <header class="topbar">
-        <div class="brand">
-          <div class="brand-icon">F</div>
+  <!-- CSS da aplicação -->
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
 
-          <div class="brand-text">
-            <strong>FACIM 2026</strong>
-            <span>Mapa</span>
-          </div>
-        </div>
+<body>
+  <!-- Aplicação -->
+  <div id="app">
+    <!-- Cabeçalho -->
+    <div id="header"></div>
 
-        <button
-          id="menuButton"
-          class="icon-button"
-          type="button"
-          aria-label="Abrir menu"
-        >
-          ☰
-        </button>
-      </header>
+    <!-- Pesquisa -->
+    <div id="search"></div>
 
-      <!-- Pesquisa -->
-      <section class="search-container">
-        <div class="search-box">
-          <span class="search-icon">⌕</span>
+    <!-- Mapa -->
+    <main id="map"></main>
 
-          <input
-            id="searchInput"
-            type="search"
-            placeholder="Pesquisar na FACIM..."
-            autocomplete="off"
-            spellcheck="false"
-          />
+    <!-- Controles flutuantes -->
+    <div id="controls"></div>
 
-          <button
-            id="clearSearch"
-            class="clear-button hidden"
-            type="button"
-            aria-label="Limpar pesquisa"
-          >
-            ×
-          </button>
-        </div>
+    <!-- Legenda -->
+    <div id="map_legend"></div>
 
-        <!-- Resultados -->
-        <div id="searchResults" class="search-results hidden"></div>
-      </section>
-
-      <!-- Mapa -->
-      <main id="map"></main>
-
-      <!-- Controles flutuantes -->
-      <div class="map-controls">
-        <button
-          id="navigationButton"
-          class="map-button navigation-button"
-          type="button"
-          title="Navegar"
-          aria-label="Navegar"
-        >
-          ➤
-        </button>
-        <button
-          id="locateButton"
-          class="map-button"
-          type="button"
-          aria-label="Minha localização"
-          title="Minha localização"
-        >
-          ◎
-        </button>
-
-        <button
-          id="zoomInButton"
-          class="map-button"
-          type="button"
-          aria-label="Aumentar zoom"
-          title="Aumentar zoom"
-        >
-          +
-        </button>
-
-        <button
-          id="zoomOutButton"
-          class="map-button"
-          type="button"
-          aria-label="Diminuir zoom"
-          title="Diminuir zoom"
-        >
-          −
-        </button>
-      </div>
-
-      <!-- Legenda -->
-      <div id="legend" class="legend">
-        <div class="legend-title">Mapa FACIM</div>
-
-        <div class="legend-item">
-          <span class="legend-color stand"></span>
-          <span>Stands</span>
-        </div>
-
-        <div class="legend-item">
-          <span class="legend-color gate"></span>
-          <span>Bilheteiras</span>
-        </div>
-
-        <div class="legend-item">
-          <span class="legend-color wc"></span>
-          <span>WCs</span>
-        </div>
-
-        <div class="legend-item">
-          <span class="legend-color building"></span>
-          <span>Edifícios</span>
-        </div>
-
-        <div class="legend-item">
-          <span class="legend-color parking"></span>
-          <span>P. Estacionamento</span>
-        </div>
-      </div>
-
-      <!-- Indicador de carregamento -->
-      <div id="loading" class="loading-overlay">
-        <div class="loading-card">
-          <div class="spinner"></div>
-          <span>A carregar mapa...</span>
-        </div>
-      </div>
-
-      <!-- Mensagem de erro -->
-      <div id="errorMessage" class="error-message hidden"></div>
-
-      <!-- Informação inferior -->
-      <div id="featureInfo" class="feature-info hidden">
-        <button
-          id="closeFeatureInfo"
-          class="feature-close"
-          type="button"
-          aria-label="Fechar"
-        >
-          ×
-        </button>
-
-        <div id="featureInfoContent"></div>
-      </div>
-      <div id="navigationPanel" class="navigation-panel">
-        <div class="navigation-header">
-          <strong>Navegação</strong>
-
-          <button id="toggleNavigationForm" type="button" title="Recolher">
-            −
-          </button>
-        </div>
-
-        <div id="navigationForm" class="navigation-form">
-          <div class="navigation-field">
-            <label for="navigationOriginSearch"> Origem </label>
-
-            <div class="navigation-search">
-              <input
-                id="navigationOriginSearch"
-                type="text"
-                placeholder="Pesquisar origem..."
-                autocomplete="off"
-              />
-
-              <button
-                id="useCurrentLocation"
-                type="button"
-                title="Usar localização atual"
-              >
-                ◎
-              </button>
-            </div>
-
-            <div
-              id="navigationOriginResults"
-              class="navigation-search-results"
-            ></div>
-          </div>
-
-          <div class="navigation-field">
-            <label for="navigationDestinationSearch"> Destino </label>
-
-            <div class="navigation-search">
-              <input
-                id="navigationDestinationSearch"
-                type="text"
-                placeholder="Pesquisar destino..."
-                autocomplete="off"
-              />
-            </div>
-
-            <div
-              id="navigationDestinationResults"
-              class="navigation-search-results"
-            ></div>
-          </div>
-
-          <button id="startNavigation" type="button" class="navigation-start">
-            Iniciar navegação
-          </button>
-        </div>
-
-        <div id="navigationResult" class="navigation-result hidden">
-          <div class="navigation-route-names">
-            <div>
-              <span>Origem (Círculo azul)</span>
-              <strong id="navigationOriginName">—</strong>
-            </div>
-
-            <div>
-              <span>Destino (Círculo vermelho)</span>
-              <strong id="navigationDestinationName">—</strong>
-            </div>
-          </div>
-
-          <div class="navigation-metric">
-            <span>Distância</span>
-            <strong id="navigationDistance">—</strong>
-          </div>
-
-          <div class="navigation-metric">
-            <span>Azimute</span>
-            <strong id="navigationAzimuth">—</strong>
-          </div>
-
-          <div class="navigation-metric">
-            <span>Rumo</span>
-            <strong id="navigationBearing">—</strong>
-          </div>
-
-          <button id="exitNavigation" type="button" class="navigation-exit">
-            Sair da navegação
-          </button>
-        </div>
+    <!-- Indicador de carregamento -->
+    <div id="loading" class="loading-overlay">
+      <div class="loading-card">
+        <div class="spinner"></div>
+        <span>A carregar mapa...</span>
       </div>
     </div>
 
-    <!-- Controle de mapas e camadas -->
-    <div class="map-layers-control">
-      <button
-        id="layersButton"
-        class="layers-button"
-        type="button"
-        aria-label="Mapas e camadas"
-        title="Mapas e camadas"
-      >
-        ◈
-      </button>
+    <!-- Mensagem de erro -->
+    <div id="errorMessage" class="error-message hidden"></div>
 
-      <div id="layersPanel" class="layers-panel hidden">
-        <div class="layers-panel-title">Mapa</div>
+    <!-- Informação inferior -->
+    <div id="search_info"></div>
 
-        <label class="layer-option">
-          <input type="radio" name="basemap" value="osm" checked />
-          <span>OpenStreetMap</span>
-        </label>
+    <div id="navigation"></div>
+  </div>
 
-        <label class="layer-option">
-          <input type="radio" name="basemap" value="cartoLight" />
-          <span>Carto Light</span>
-        </label>
+  <!-- Controle de mapas e camadas -->
+  <div id="layers"></div>
 
-        <label class="layer-option">
-          <input type="radio" name="basemap" value="cartoDark" />
-          <span>Carto Dark</span>
-        </label>
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Turf -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+  <!-- JavaScript principal -->
+  <script type="module">
+    import { initializeApp } from './assets/js/app.js';
 
-        <label class="layer-option">
-          <input type="radio" name="basemap" value="satellite" />
-          <span>Esri Satellite</span>
-        </label>
+    async function includeHTML(id, file) {
+      const response = await fetch(file);
 
-        <div class="layers-divider"></div>
+      if (!response.ok) {
+        throw new Error(`Erro ao carregar ${file}`);
+      }
 
-        <div class="layers-panel-title">Camadas</div>
+      document.getElementById(id).innerHTML = await response.text();
+    }
 
-        <label class="layer-option">
-          <input id="parcelsToggle" type="checkbox" checked />
-          <span>Stands</span>
-        </label>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await includeHTML('header', 'components/header.html');
+      await includeHTML('search', 'components/search.html');
+      await includeHTML('controls', 'components/controls.html');
+      await includeHTML('map_legend', 'components/legend.html');
+      await includeHTML('search_info', 'components/search-info.html');
+      await includeHTML('navigation', 'components/navigation.html');
+      await includeHTML('layers', 'components/layers.html');
 
-        <label class="layer-option">
-          <input id="gatesToggle" type="checkbox" checked />
-          <span>Bilheteiras</span>
-        </label>
+      initializeApp();
+    });
+  </script>
 
-        <label class="layer-option">
-          <input id="wcsToggle" type="checkbox" checked />
-          <span>WCs</span>
-        </label>
+</body>
 
-        <label class="layer-option">
-          <input id="buildingsToggle" type="checkbox" checked />
-          <span>Edifícios</span>
-        </label>
-
-        <label class="layer-option">
-          <input id="parkingToggle" type="checkbox" checked />
-          <span>P. Estacionamento</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Leaflet -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
-    <!-- JavaScript principal -->
-    <script src="assets/js/app.js"></script>
-  </body>
 </html>

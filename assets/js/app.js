@@ -27,6 +27,12 @@ const CONFIG = {
   },
 };
 
+const GEOLOCATION_OPTIONS = {
+  enableHighAccuracy: true,
+  timeout: 20000,
+  maximumAge: 60000,
+};
+
 /* =========================================================
    ESTADO DA APLICAÇÃO
    ========================================================= */
@@ -83,13 +89,11 @@ const state = {
    INICIALIZAÇÃO
    ========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+function initializeApp() {
   initializeMap();
-
   initializeEvents();
-
   loadGeoJSONData();
-});
+}
 
 /* =========================================================
    MAPA
@@ -473,7 +477,7 @@ async function loadGeoJSONData() {
 
     showError(
       "Não foi possível carregar os dados do mapa. " +
-        "Verifique se os arquivos GeoJSON estão em /data/.",
+      "Verifique se os arquivos GeoJSON estão em /data/.",
     );
   } finally {
     showLoading(false);
@@ -638,15 +642,14 @@ function renderSearchResults(results) {
                     ${escapeHTML(item.type)}
                 </div>
 
-                ${
-                  detail
-                    ? `
+                ${detail
+        ? `
                     <div class="result-detail">
                         ${escapeHTML(detail)}
                     </div>
                     `
-                    : ""
-                }
+        : ""
+      }
 
             `;
 
@@ -752,13 +755,13 @@ function getFeatureDescription(feature) {
 
   return entries
     .filter(([key, value]) =>
-        value !== null &&
-        value !== undefined &&
-        String(value).trim() !== ""
+      value !== null &&
+      value !== undefined &&
+      String(value).trim() !== ""
     )
     .slice(0, 3)
     .map(([key, value]) =>
-        `${translateKey(key)}: ${value}`
+      `${translateKey(key)}: ${value}`
     )
     .join(" • ");
 }
@@ -1028,11 +1031,48 @@ function initializeEvents() {
 
   const searchResults = document.getElementById("searchResults");
 
+  const toggleMapControls = document.getElementById("toggleMapControls");
+  const mapControlsItems = document.getElementById("mapControlsItems");
+
+  toggleMapControls?.addEventListener("click", () => {
+    const collapsed = mapControlsItems.classList.toggle("collapsed");
+
+    toggleMapControls.setAttribute(
+      "aria-expanded",
+      String(!collapsed)
+    );
+
+    toggleMapControls.textContent = collapsed ? "☰" : "×";
+
+    toggleMapControls.title = collapsed
+      ? "Mostrar controles"
+      : "Ocultar controles";
+  });
+
+  //Controlo da legenda
+  const toggleLegend = document.getElementById("toggleLegend");
+  const legendItems = document.getElementById("legendItems");
+
+  toggleLegend?.addEventListener("click", () => {
+    const collapsed = legendItems.classList.toggle("collapsed");
+
+    toggleLegend.setAttribute(
+      "aria-expanded",
+      String(!collapsed)
+    );
+
+    toggleLegend.textContent = collapsed ? "↑" : "↓";
+
+    toggleLegend.title = collapsed
+      ? "Mostrar legenda"
+      : "Ocultar legenda";
+  });
+
   /*
    * Pesquisa.
    */
 
-  searchInput.addEventListener("input", (event) => {
+  searchInput?.addEventListener("input", (event) => {
     const query = event.target.value.trim();
 
     if (!query) {
@@ -1056,7 +1096,7 @@ function initializeEvents() {
    * Limpar pesquisa.
    */
 
-  clearSearch.addEventListener("click", () => {
+  clearSearch?.addEventListener("click", () => {
     searchInput.value = "";
 
     clearSearch.classList.add("hidden");
@@ -1160,16 +1200,16 @@ function initializeEvents() {
     .addEventListener("change", (event) => {
       toggleLayer(state.parcelsLayer, event.target.checked);
     });
-  
-    /*
-   * WCs
-   */
+
+  /*
+ * WCs
+ */
   document
     .getElementById("wcsToggle")
     .addEventListener("change", (event) => {
       toggleLayer(state.wcsLayer, event.target.checked);
     });
-    
+
   /*
    * Bilheteiras
    */
@@ -1187,11 +1227,11 @@ function initializeEvents() {
     .addEventListener("change", (event) => {
       toggleLayer(state.parksLayer, event.target.checked);
     });
-  
-    /*
-   * Não fechar o painel quando
-   * clicar dentro dele.
-   */
+
+  /*
+ * Não fechar o painel quando
+ * clicar dentro dele.
+ */
 
   layersPanel.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1241,17 +1281,21 @@ function initializeEvents() {
 }
 
 function toggleNavigationForm() {
-  const form = document.getElementById("navigationForm");
-
+  const panel = document.getElementById("navigationPanel");
   const button = document.getElementById("toggleNavigationForm");
 
-  form.classList.toggle("collapsed");
+  const collapsed = panel.classList.toggle("collapsed");
 
-  const collapsed = form.classList.contains("collapsed");
+  button.setAttribute(
+    "aria-expanded",
+    String(!collapsed)
+  );
 
-  button.textContent = collapsed ? "+" : "−";
+  button.textContent = collapsed ? "▶" : "◀";
 
-  button.title = collapsed ? "Expandir" : "Recolher";
+  button.title = collapsed
+    ? "Mostrar navegação"
+    : "Recolher";
 }
 
 function validateNavigation() {
@@ -1461,6 +1505,7 @@ async function openNavigation() {
   const panel = document.getElementById("navigationPanel");
 
   panel.classList.remove("hidden");
+  panel.classList.remove("collapsed");
 
   state.navigation.active = true;
 
@@ -1522,13 +1567,7 @@ async function determineNavigationOrigin() {
         "Selecione obrigatoriamente uma origem.";
     },
 
-    {
-      enableHighAccuracy: true,
-
-      timeout: 10000,
-
-      maximumAge: 30000,
-    },
+    GEOLOCATION_OPTIONS
   );
 }
 
@@ -1652,7 +1691,7 @@ function requestCurrentLocation(useAsOrigin = false) {
 
       setNavigationStatus(
         "Não foi possível obter a localização. " +
-          "Selecione uma origem manualmente.",
+        "Selecione uma origem manualmente.",
       );
 
       state.navigation.insideLimit = false;
@@ -1695,8 +1734,8 @@ function checkNavigationLocation(point) {
 
     setNavigationStatus(
       "Está dentro da área da FACIM. " +
-        "A localização atual foi definida como origem. " +
-        "Pode alterá-la se desejar.",
+      "A localização atual foi definida como origem. " +
+      "Pode alterá-la se desejar.",
     );
   } else {
     /*
@@ -1748,11 +1787,11 @@ function startNavigation() {
 
   drawNavigation(origin, destination);
 
-  const form = document.getElementById("navigationForm");
+  const panel = document.getElementById("navigationPanel");
 
-  form.classList.add("collapsed");
+  panel.classList.add("collapsed");
 
-  document.getElementById("toggleNavigationForm").textContent = "+";
+  document.getElementById("toggleNavigationForm").textContent = "▶";
 }
 
 function getNavigationFeature(value) {
@@ -2089,23 +2128,20 @@ function exitNavigation() {
   }
 
   /*
-   * 9. Mostrar novamente o formulário
+   * 9. Mostrar novamente o painel
    */
 
-  const navigationForm = document.getElementById("navigationForm");
+  const navigationPanel = document.getElementById("navigationPanel");
 
-  if (navigationForm) {
-    navigationForm.classList.remove("collapsed");
+  if (navigationPanel) {
+    navigationPanel.classList.remove("collapsed");
   }
-
-  /*
-   * 10. Restaurar botão de expandir
-   */
 
   const toggleButton = document.getElementById("toggleNavigationForm");
 
   if (toggleButton) {
-    toggleButton.textContent = "−";
+    toggleButton.textContent = "◀";
+    toggleButton.setAttribute("aria-expanded", "true");
   }
 }
 
@@ -2129,7 +2165,7 @@ function locateUser() {
 
     maxZoom: 19,
 
-    enableHighAccuracy: true,
+    ...GEOLOCATION_OPTIONS,
   });
 
   state.map.once("locationfound", (event) => {
@@ -2145,8 +2181,26 @@ function locateUser() {
       .openPopup();
   });
 
-  state.map.once("locationerror", () => {
-    showError("Não foi possível obter a tua localização.");
+  state.map.once("locationerror", (error) => {
+    console.error("❌ Erro de geolocalização:", error);
+    console.error("Código:", error.code);
+    console.error("Mensagem:", error.message);
+
+    if (error.code === 1) {
+      showError("Permissão de localização recusada.");
+    } else if (error.code === 2) {
+      showError(
+        "Não foi possível determinar a tua localização. " +
+        "Verifica se o dispositivo tem localização disponível."
+      );
+    } else if (error.code === 3) {
+      showError(
+        "A localização demorou demasiado tempo. " +
+        "Tenta novamente."
+      );
+    } else {
+      showError("Não foi possível obter a tua localização.");
+    }
   });
 }
 
@@ -2250,3 +2304,5 @@ function toggleLayer(layer, visible) {
     }
   }
 }
+
+export { initializeApp };

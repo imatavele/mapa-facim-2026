@@ -1,0 +1,74 @@
+<div id="navigationPanel" class="navigation-panel collapsed">
+    <div class="navigation-header">
+        <strong>Navegação</strong>
+
+        <button id="toggleNavigationForm" type="button" title="Recolher" aria-label="Recolher navegação"
+            aria-expanded="true">
+            ▶
+        </button>
+    </div>
+
+    <div id="navigationForm" class="navigation-form">
+        <div class="navigation-field">
+            <label for="navigationOriginSearch"> Origem </label>
+
+            <div class="navigation-search">
+                <input id="navigationOriginSearch" type="text" placeholder="Pesquisar origem..." autocomplete="off" />
+
+                <button id="useCurrentLocation" type="button" title="Usar localização atual">
+                    ◎
+                </button>
+            </div>
+
+            <div id="navigationOriginResults" class="navigation-search-results"></div>
+        </div>
+
+        <div class="navigation-field">
+            <label for="navigationDestinationSearch"> Destino </label>
+
+            <div class="navigation-search">
+                <input id="navigationDestinationSearch" type="text" placeholder="Pesquisar destino..."
+                    autocomplete="off" />
+            </div>
+
+            <div id="navigationDestinationResults" class="navigation-search-results"></div>
+        </div>
+
+        <button id="startNavigation" type="button" class="navigation-start">
+            Iniciar navegação
+        </button>
+    </div>
+
+    <div id="navigationResult" class="navigation-result hidden">
+        <div class="navigation-route-names">
+            <div>
+                <span>Origem (Círculo azul)</span>
+                <strong id="navigationOriginName">—</strong>
+            </div>
+
+            <div>
+                <span>Destino (Círculo vermelho)</span>
+                <strong id="navigationDestinationName">—</strong>
+            </div>
+        </div>
+
+        <div class="navigation-metric">
+            <span>Distância</span>
+            <strong id="navigationDistance">—</strong>
+        </div>
+
+        <div class="navigation-metric">
+            <span>Azimute</span>
+            <strong id="navigationAzimuth">—</strong>
+        </div>
+
+        <div class="navigation-metric">
+            <span>Rumo</span>
+            <strong id="navigationBearing">—</strong>
+        </div>
+
+        <button id="exitNavigation" type="button" class="navigation-exit">
+            Sair da navegação
+        </button>
+    </div>
+</div>
