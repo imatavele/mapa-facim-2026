@@ -9,12 +9,22 @@
     </div>
 
     <div id="navigationForm" class="navigation-form">
+        <div id="navigationStatus" class="navigation-status" aria-live="polite"></div>
         <div class="navigation-field">
             <label for="navigationOriginSearch"> Origem </label>
 
             <div class="navigation-search">
-                <input id="navigationOriginSearch" type="text" placeholder="Pesquisar origem..." autocomplete="off" />
+                <div class="navigation-search-input">
 
+                    <input id="navigationOriginSearch" type="text" placeholder="Pesquisar origem..."
+                        autocomplete="off" />
+
+                    <button id="clearNavigationOrigin" type="button" class="navigation-clear-button"
+                        aria-label="Limpar origem" title="Limpar">
+                        ×
+                    </button>
+
+                </div>
                 <button id="useCurrentLocation" type="button" title="Usar localização atual">
                     ◎
                 </button>
@@ -27,8 +37,16 @@
             <label for="navigationDestinationSearch"> Destino </label>
 
             <div class="navigation-search">
-                <input id="navigationDestinationSearch" type="text" placeholder="Pesquisar destino..."
-                    autocomplete="off" />
+                <div class="navigation-search-input">
+
+                    <input id="navigationDestinationSearch" type="text" placeholder="Pesquisar destino..."
+                        autocomplete="off" />
+
+                    <button id="clearNavigationDestination" type="button" class="navigation-clear-button"
+                        aria-label="Limpar destino" title="Limpar">
+                        ×
+                    </button>
+                </div>
             </div>
 
             <div id="navigationDestinationResults" class="navigation-search-results"></div>

@@ -454,7 +454,7 @@ button {
 
 .legend-color.building {
     background: rgba(37, 99, 235, 0.20);
-    border: 1px solid #2563eb;
+    border: 1px solid #a765ad;
 }
 
 .legend-color.stand {
@@ -470,6 +470,11 @@ button {
 .legend-color.gate {
     background: rgba(239, 68, 68, 0.30);
     border: 1px solid #ef4444;
+}
+
+.legend-color.service {
+    background: rgba(139, 92, 246, 0.25);
+    border: 1px solid #8b5cf6;
 }
 
 .legend-color.parking {
@@ -1006,7 +1011,7 @@ button {
     flex: 1;
 }
 
-.navigation-search button {
+.navigation-search > button {
     width: 43px;
     height: 43px;
 
@@ -1123,6 +1128,10 @@ button {
     font-size: 11px;
 
     line-height: 1.5;
+}
+
+.navigation-status:empty {
+    display: none;
 }
 
 
@@ -1434,4 +1443,256 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/*LIMPAR ORIGEM e DESTINO*/
+.navigation-search-input {
+    position: relative;
+    flex: 1;
+}
+
+.navigation-search-input input {
+    width: 100%;
+    padding-right: 32px;
+}
+
+.navigation-clear-button {
+    position: absolute;
+
+    right: 7px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 22px;
+    height: 22px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    background: transparent;
+
+    color: #64748b;
+
+    font-size: 17px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.navigation-clear-button:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.live-navigation-box {
+    position: absolute;
+
+    top: 120px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    z-index: 1200;
+
+    width: 250px;
+
+    background: rgba(255, 255, 255, 0.97);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 8px 30px rgba(15, 23, 42, 0.22);
+
+    overflow: hidden;
+
+    user-select: none;
+}
+
+.live-navigation-box.hidden {
+    display: none;
+}
+
+
+.live-navigation-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 9px 12px;
+
+    background: #0f172a;
+
+    color: white;
+
+    cursor: move;
+}
+
+
+.live-navigation-header strong {
+    font-size: 13px;
+}
+
+
+.live-navigation-header button {
+    width: 24px;
+    height: 24px;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.12);
+
+    color: white;
+
+    font-size: 17px;
+
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+
+.live-navigation-distance,
+.live-navigation-direction {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 10px 12px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+
+.live-navigation-distance span,
+.live-navigation-direction span {
+    font-size: 12px;
+
+    color: #64748b;
+}
+
+
+.live-navigation-distance strong,
+.live-navigation-direction strong {
+    font-size: 15px;
+
+    color: #0f172a;
+}
+
+
+.live-navigation-status {
+    padding: 10px 12px;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+
+    color: #475569;
+}
+
+
+.live-navigation-status.correct {
+    color: #15803d;
+}
+
+
+.live-navigation-status.wrong {
+    color: #dc2626;
+}
+
+
+.live-navigation-status.neutral {
+    color: #64748b;
+}
+
+/*FORA DA FACIM*/
+.outside-navigation-popup {
+    position: absolute;
+
+    left: 50%;
+    bottom: 30px;
+
+    transform: translateX(-50%);
+
+    z-index: 1600;
+
+    width: min(360px, calc(100% - 30px));
+
+    padding: 16px;
+
+    background: rgba(255, 255, 255, 0.98);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 35px rgba(15, 23, 42, 0.25);
+}
+
+.outside-navigation-popup.hidden {
+    display: none;
+}
+
+.outside-navigation-popup-title {
+    font-size: 16px;
+    font-weight: 700;
+
+    color: #0f172a;
+
+    margin-bottom: 6px;
+}
+
+.outside-navigation-popup-text {
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: #475569;
+
+    margin-bottom: 14px;
+}
+
+.outside-navigation-popup-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.outside-navigation-popup-actions button {
+    flex: 1;
+
+    min-height: 40px;
+
+    border-radius: 9px;
+
+    cursor: pointer;
+
+    font-weight: 600;
+}
+
+.outside-location-show {
+    border: 1px solid #2563eb;
+
+    background: #2563eb;
+
+    color: white;
+}
+
+.outside-location-close {
+    border: 1px solid var(--border);
+
+    background: white;
+
+    color: #475569;
 }

@@ -53,10 +53,13 @@
     <div id="search_info"></div>
 
     <div id="navigation"></div>
+    <div id="directions"></div>
   </div>
 
   <!-- Controle de mapas e camadas -->
   <div id="layers"></div>
+
+  <div id="outside_facim"></div>
 
   <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -83,7 +86,9 @@
       await includeHTML('map_legend', 'components/legend.html');
       await includeHTML('search_info', 'components/search-info.html');
       await includeHTML('navigation', 'components/navigation.html');
+      await includeHTML('directions', 'components/directions.html');
       await includeHTML('layers', 'components/layers.html');
+      await includeHTML('outside_facim', 'components/outside-facim.html');
 
       initializeApp();
     });
