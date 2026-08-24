@@ -65,10 +65,60 @@ const state = {
    INICIALIZAÇÃO
    ========================================================= */
 
-function initializeApp() {
+async function initializeApp() {
   initializeMap();
   initializeEvents();
   loadGeoJSONData();
+  await getUserLocation();
+  handleNavigationStartLocation();
+}
+
+function handleNavigationStartLocation() {
+  const point = state.navigation.currentLocation;
+
+  if (!point) {
+    showError("Não foi possível obter a sua localização atual. Certifique de permitir a aplicação obter sua localização");
+    return;
+  }
+
+  const inside = isPointInsideLimit(point);
+
+  state.navigation.insideLimit = inside;
+
+  if (inside) {
+    /*
+     * Dentro da FACIM:
+     * mostra automaticamente.
+     */
+    renderCurrentLocation(point);
+
+    return;
+  }
+
+  /*
+   * Fora da FACIM:
+   * não mostra automaticamente.
+   * Pergunta primeiro.
+   */
+  showOutsideNavigationPopup();
+}
+
+function isPointInsideLimit(point) {
+  if (!state.navigation.limit) {
+    return false;
+  }
+
+  try {
+    const limit = state.navigation.limit;
+
+    const limitFeature =
+      limit.type === "FeatureCollection" ? limit.features[0] : limit;
+    return turf.booleanPointInPolygon(point, limitFeature);
+  } catch (error) {
+    console.error("Erro ao verificar limite:", error);
+
+    return false;
+  }
 }
 
 /* =========================================================
@@ -908,384 +958,380 @@ function initializeEvents() {
    DIRECOES
    ========================================================= */
 
-  function showLiveNavigationBox() {
-    const box = document.getElementById("liveNavigationBox");
+function showLiveNavigationBox() {
+  const box = document.getElementById("liveNavigationBox");
 
-    if (!box) {
-      return;
-    }
-
-    box.classList.remove("hidden");
-
-    state.navigation.navigationBox = box;
-
-    const closeLiveNavigationButton = document.getElementById(
-      "closeLiveNavigation",
-    );
-
-    if (closeLiveNavigationButton) {
-      closeLiveNavigationButton.addEventListener(
-        "click",
-        hideLiveNavigationBox,
-      );
-    }
+  if (!box) {
+    return;
   }
 
-  function hideLiveNavigationBox() {
-    const box = document.getElementById("liveNavigationBox");
+  box.classList.remove("hidden");
 
-    if (!box) {
-      return;
-    } else {
-      console.log("liveNavigationBox nao encontrado");
-    }
+  state.navigation.navigationBox = box;
 
-    box.classList.add("hidden");
+  const closeLiveNavigationButton = document.getElementById(
+    "closeLiveNavigation",
+  );
 
-    state.navigation.navigationBox = null;
+  if (closeLiveNavigationButton) {
+    closeLiveNavigationButton.addEventListener("click", hideLiveNavigationBox);
+  }
+}
+
+function hideLiveNavigationBox() {
+  const box = document.getElementById("liveNavigationBox");
+
+  if (!box) {
+    return;
+  } else {
+    console.log("liveNavigationBox nao encontrado");
   }
 
-  function updateLiveNavigation(position) {
-    if (!state.navigation.destination) {
-      return;
-    }
+  box.classList.add("hidden");
+
+  state.navigation.navigationBox = null;
+}
+
+function updateLiveNavigation(position) {
+  if (!state.navigation.destination) {
+    return;
+  }
+
+  const currentPoint = turf.point([
+    position.coords.longitude,
+    position.coords.latitude,
+  ]);
+
+  const destination = state.navigation.destination.point;
+
+  // Distância atual até ao destino
+  const distanceMeters = turf.distance(currentPoint, destination, {
+    units: "meters",
+  });
+
+  // Verifica chegada
+  if (distanceMeters <= NAVIGATION_ARRIVAL_DISTANCE) {
+    handleNavigationArrival(distanceMeters);
+
+    return;
+  }
+
+  // Bearing da posição atual para o destino
+  const destinationBearing = turf.bearing(currentPoint, destination);
+
+  updateLiveNavigationDisplay(distanceMeters, destinationBearing, position);
+
+  // Guarda posição atual
+  state.navigation.currentLocation = currentPoint;
+}
+
+function handleNavigationArrival(distanceMeters) {
+  const status = document.getElementById("liveNavigationStatus");
+
+  const distance = document.getElementById("liveNavigationDistance");
+
+  const direction = document.getElementById("liveNavigationDirection");
+
+  if (distance) {
+    distance.textContent = `${Math.round(distanceMeters)} m`;
+  }
+
+  if (direction) {
+    direction.textContent = "🎯";
+  }
+
+  if (status) {
+    status.textContent = "🎯 Chegaste ao destino";
+
+    status.className = "live-navigation-status correct";
+  }
+
+  // Para o acompanhamento GPS
+  stopNavigationTracking();
+}
+
+function formatNavigationDistance(distanceMeters) {
+  if (distanceMeters < 1000) {
+    return `${Math.round(distanceMeters)} m`;
+  }
+
+  return `${(distanceMeters / 1000).toFixed(2)} km`;
+}
+
+function bearingToDirection(bearing) {
+  const normalized = ((bearing % 360) + 360) % 360;
+
+  if (normalized === 0) {
+    return "N";
+  }
+
+  if (normalized < 90) {
+    return "NE";
+  }
+
+  if (normalized === 90) {
+    return "E";
+  }
+
+  if (normalized < 180) {
+    return "SE";
+  }
+
+  if (normalized === 180) {
+    return "S";
+  }
+
+  if (normalized < 270) {
+    return "SW";
+  }
+
+  if (normalized === 270) {
+    return "W";
+  }
+
+  return "NW";
+}
+
+function updateLiveNavigationDisplay(distanceMeters, bearing, position) {
+  const distanceElement = document.getElementById("liveNavigationDistance");
+
+  const directionElement = document.getElementById("liveNavigationDirection");
+
+  const statusElement = document.getElementById("liveNavigationStatus");
+
+  if (!distanceElement || !directionElement || !statusElement) {
+    return;
+  }
+
+  distanceElement.textContent = formatNavigationDistance(distanceMeters);
+
+  const direction = bearingToDirection(bearing);
+
+  directionElement.textContent = `${formatDMS(bearing)} ${direction}`;
+
+  updateNavigationMovementStatus(position, bearing, statusElement);
+}
+
+function updateNavigationMovementStatus(
+  position,
+  destinationBearing,
+  statusElement,
+) {
+  let movementBearing = null;
+
+  /*
+   * 1. Primeiro tentamos usar o heading
+   * fornecido pelo GPS.
+   */
+  if (
+    typeof position.coords.heading === "number" &&
+    !Number.isNaN(position.coords.heading)
+  ) {
+    movementBearing = position.coords.heading;
+  } else if (state.navigation.previousLocation) {
+    /*
+     * 2. Se o GPS não fornecer heading,
+     * calculamos pelo deslocamento.
+     */
+    const previousLocation = state.navigation.previousLocation;
 
     const currentPoint = turf.point([
       position.coords.longitude,
       position.coords.latitude,
     ]);
 
-    const destination = state.navigation.destination.point;
-
-    // Distância atual até ao destino
-    const distanceMeters = turf.distance(currentPoint, destination, {
+    const movementDistance = turf.distance(previousLocation, currentPoint, {
       units: "meters",
     });
 
-    // Verifica chegada
-    if (distanceMeters <= NAVIGATION_ARRIVAL_DISTANCE) {
-      handleNavigationArrival(distanceMeters);
-
-      return;
+    /*
+     * Se praticamente não se moveu,
+     * não tentamos determinar direção.
+     */
+    if (movementDistance >= NAVIGATION_MIN_MOVEMENT) {
+      movementBearing = turf.bearing(previousLocation, currentPoint);
     }
-
-    // Bearing da posição atual para o destino
-    const destinationBearing = turf.bearing(currentPoint, destination);
-
-    updateLiveNavigationDisplay(distanceMeters, destinationBearing, position);
-
-    // Guarda posição atual
-    state.navigation.currentLocation = currentPoint;
   }
 
-  function handleNavigationArrival(distanceMeters) {
-    const status = document.getElementById("liveNavigationStatus");
+  /*
+   * Se não conseguimos determinar
+   * a direção do movimento.
+   */
+  if (movementBearing === null) {
+    statusElement.textContent = "A aguardar movimento...";
 
-    const distance = document.getElementById("liveNavigationDistance");
+    statusElement.className = "live-navigation-status neutral";
 
-    const direction = document.getElementById("liveNavigationDirection");
-
-    if (distance) {
-      distance.textContent = `${Math.round(distanceMeters)} m`;
-    }
-
-    if (direction) {
-      direction.textContent = "🎯";
-    }
-
-    if (status) {
-      status.textContent = "🎯 Chegaste ao destino";
-
-      status.className = "live-navigation-status correct";
-    }
-
-    // Para o acompanhamento GPS
-    stopNavigationTracking();
-  }
-
-  function formatNavigationDistance(distanceMeters) {
-    if (distanceMeters < 1000) {
-      return `${Math.round(distanceMeters)} m`;
-    }
-
-    return `${(distanceMeters / 1000).toFixed(2)} km`;
-  }
-
-  function bearingToDirection(bearing) {
-    const normalized = ((bearing % 360) + 360) % 360;
-
-    if (normalized === 0) {
-      return "N";
-    }
-
-    if (normalized < 90) {
-      return "NE";
-    }
-
-    if (normalized === 90) {
-      return "E";
-    }
-
-    if (normalized < 180) {
-      return "SE";
-    }
-
-    if (normalized === 180) {
-      return "S";
-    }
-
-    if (normalized < 270) {
-      return "SW";
-    }
-
-    if (normalized === 270) {
-      return "W";
-    }
-
-    return "NW";
-  }
-
-  function updateLiveNavigationDisplay(distanceMeters, bearing, position) {
-    const distanceElement = document.getElementById("liveNavigationDistance");
-
-    const directionElement = document.getElementById("liveNavigationDirection");
-
-    const statusElement = document.getElementById("liveNavigationStatus");
-
-    if (!distanceElement || !directionElement || !statusElement) {
-      return;
-    }
-
-    distanceElement.textContent = formatNavigationDistance(distanceMeters);
-
-    const direction = bearingToDirection(bearing);
-
-    directionElement.textContent = `${formatDMS(bearing)} ${direction}`;
-
-    updateNavigationMovementStatus(position, bearing, statusElement);
-  }
-
-  function updateNavigationMovementStatus(
-    position,
-    destinationBearing,
-    statusElement,
-  ) {
-    let movementBearing = null;
-
-    /*
-     * 1. Primeiro tentamos usar o heading
-     * fornecido pelo GPS.
-     */
-    if (
-      typeof position.coords.heading === "number" &&
-      !Number.isNaN(position.coords.heading)
-    ) {
-      movementBearing = position.coords.heading;
-    } else if (state.navigation.previousLocation) {
-
-    /*
-     * 2. Se o GPS não fornecer heading,
-     * calculamos pelo deslocamento.
-     */
-      const previousLocation = state.navigation.previousLocation;
-
-      const currentPoint = turf.point([
-        position.coords.longitude,
-        position.coords.latitude,
-      ]);
-
-      const movementDistance = turf.distance(previousLocation, currentPoint, {
-        units: "meters",
-      });
-
-      /*
-       * Se praticamente não se moveu,
-       * não tentamos determinar direção.
-       */
-      if (movementDistance >= NAVIGATION_MIN_MOVEMENT) {
-        movementBearing = turf.bearing(previousLocation, currentPoint);
-      }
-    }
-
-    /*
-     * Se não conseguimos determinar
-     * a direção do movimento.
-     */
-    if (movementBearing === null) {
-      statusElement.textContent = "A aguardar movimento...";
-
-      statusElement.className = "live-navigation-status neutral";
-
-      state.navigation.previousLocation = turf.point([
-        position.coords.longitude,
-        position.coords.latitude,
-      ]);
-
-      return;
-    }
-
-    /*
-     * Diferença entre:
-     *
-     * direção em que o utilizador vai
-     * +
-     * direção em que deveria ir.
-     */
-    const difference = angularDifference(movementBearing, destinationBearing);
-
-    if (difference <= NAVIGATION_DIRECTION_TOLERANCE) {
-      statusElement.textContent = "✓ Está indo na direção certa";
-
-      statusElement.className = "live-navigation-status correct";
-    } else {
-      statusElement.textContent = "↗ Está fora da direção do destino";
-
-      statusElement.className = "live-navigation-status wrong";
-    }
-
-    /*
-     * Guarda a posição para o próximo
-     * cálculo de movimento.
-     */
     state.navigation.previousLocation = turf.point([
       position.coords.longitude,
       position.coords.latitude,
     ]);
+
+    return;
   }
 
-  function angularDifference(a, b) {
-    let difference = Math.abs(a - b);
+  /*
+   * Diferença entre:
+   *
+   * direção em que o utilizador vai
+   * +
+   * direção em que deveria ir.
+   */
+  const difference = angularDifference(movementBearing, destinationBearing);
 
-    if (difference > 180) {
-      difference = 360 - difference;
-    }
+  if (difference <= NAVIGATION_DIRECTION_TOLERANCE) {
+    statusElement.textContent = "✓ Está indo na direção certa";
 
-    return difference;
+    statusElement.className = "live-navigation-status correct";
+  } else {
+    statusElement.textContent = "↗ Está fora da direção do destino";
+
+    statusElement.className = "live-navigation-status wrong";
   }
 
-  function startNavigationTracking() {
-    if (!navigator.geolocation) {
-      showNavigationMessage(
-        "Este dispositivo não disponibiliza localização.",
-        5000,
-      );
+  /*
+   * Guarda a posição para o próximo
+   * cálculo de movimento.
+   */
+  state.navigation.previousLocation = turf.point([
+    position.coords.longitude,
+    position.coords.latitude,
+  ]);
+}
 
-      return;
-    }
+function angularDifference(a, b) {
+  let difference = Math.abs(a - b);
 
-    // Evita dois observers simultâneos
-    if (state.navigation.watchId !== null) {
-      navigator.geolocation.clearWatch(state.navigation.watchId);
-    }
+  if (difference > 180) {
+    difference = 360 - difference;
+  }
 
-    state.navigation.previousLocation = null;
+  return difference;
+}
 
-    state.navigation.watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const point = turf.point([
-          position.coords.longitude,
-          position.coords.latitude,
-        ]);
-        const firstLocation = !state.navigation.currentLocation;
-
-        state.navigation.currentLocation = point;
-        /*
-         * Primeira posição recebida
-         */
-        if (firstLocation) {
-          handleNavigationStartLocation();
-        }
-
-        updateLiveNavigation(position);
-      },
-
-      (error) => {
-        console.error("Navigation GPS:", error);
-
-        const status = document.getElementById("liveNavigationStatus");
-
-        if (status) {
-          status.textContent = "Não foi possível atualizar a localização.";
-
-          status.className = "live-navigation-status wrong";
-        }
-      },
-
-      GEOLOCATION_OPTIONS,
+function startNavigationTracking() {
+  if (!navigator.geolocation) {
+    showNavigationMessage(
+      "Este dispositivo não disponibiliza localização.",
+      5000,
     );
+
+    return;
   }
 
-  function makeNavigationBoxDraggable() {
-    const box = document.getElementById("liveNavigationBox");
+  // Evita dois observers simultâneos
+  if (state.navigation.watchId !== null) {
+    navigator.geolocation.clearWatch(state.navigation.watchId);
+  }
 
-    const header = box?.querySelector(".live-navigation-header");
+  state.navigation.previousLocation = null;
 
-    if (!box || !header) {
-      return;
-    }
+  state.navigation.watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const point = turf.point([
+        position.coords.longitude,
+        position.coords.latitude,
+      ]);
+      const firstLocation = !state.navigation.currentLocation;
 
-    let dragging = false;
-
-    let offsetX = 0;
-    let offsetY = 0;
-
-    header.addEventListener("pointerdown", (event) => {
-      dragging = true;
-
-      const rect = box.getBoundingClientRect();
-
-      offsetX = event.clientX - rect.left;
-
-      offsetY = event.clientY - rect.top;
-
-      header.setPointerCapture(event.pointerId);
-    });
-
-    header.addEventListener("pointermove", (event) => {
-      if (!dragging) {
-        return;
+      state.navigation.currentLocation = point;
+      /*
+       * Primeira posição recebida
+       */
+      if (firstLocation) {
+        handleNavigationStartLocation();
       }
 
-      const app = document.getElementById("app");
+      updateLiveNavigation(position);
+    },
 
-      const appRect = app.getBoundingClientRect();
+    (error) => {
+      console.error("Navigation GPS:", error);
 
-      let left = event.clientX - appRect.left - offsetX;
+      const status = document.getElementById("liveNavigationStatus");
 
-      let top = event.clientY - appRect.top - offsetY;
+      if (status) {
+        status.textContent = "Não foi possível atualizar a localização.";
 
-      // Não deixar sair completamente do mapa
-      left = Math.max(0, Math.min(left, appRect.width - box.offsetWidth));
+        status.className = "live-navigation-status wrong";
+      }
+    },
 
-      top = Math.max(0, Math.min(top, appRect.height - box.offsetHeight));
+    GEOLOCATION_OPTIONS,
+  );
+}
 
-      box.style.left = `${left}px`;
+function makeNavigationBoxDraggable() {
+  const box = document.getElementById("liveNavigationBox");
 
-      box.style.top = `${top}px`;
+  const header = box?.querySelector(".live-navigation-header");
 
-      box.style.transform = "none";
-    });
-
-    header.addEventListener("pointerup", () => {
-      dragging = false;
-    });
-
-    header.addEventListener("pointercancel", () => {
-      dragging = false;
-    });
+  if (!box || !header) {
+    return;
   }
 
-  function stopNavigationTracking() {
-    if (state.navigation.watchId !== null) {
-      navigator.geolocation.clearWatch(state.navigation.watchId);
+  let dragging = false;
 
-      state.navigation.watchId = null;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  header.addEventListener("pointerdown", (event) => {
+    dragging = true;
+
+    const rect = box.getBoundingClientRect();
+
+    offsetX = event.clientX - rect.left;
+
+    offsetY = event.clientY - rect.top;
+
+    header.setPointerCapture(event.pointerId);
+  });
+
+  header.addEventListener("pointermove", (event) => {
+    if (!dragging) {
+      return;
     }
 
-    state.navigation.previousLocation = null;
+    const app = document.getElementById("app");
 
-    state.navigation.currentLocation = null;
+    const appRect = app.getBoundingClientRect();
+
+    let left = event.clientX - appRect.left - offsetX;
+
+    let top = event.clientY - appRect.top - offsetY;
+
+    // Não deixar sair completamente do mapa
+    left = Math.max(0, Math.min(left, appRect.width - box.offsetWidth));
+
+    top = Math.max(0, Math.min(top, appRect.height - box.offsetHeight));
+
+    box.style.left = `${left}px`;
+
+    box.style.top = `${top}px`;
+
+    box.style.transform = "none";
+  });
+
+  header.addEventListener("pointerup", () => {
+    dragging = false;
+  });
+
+  header.addEventListener("pointercancel", () => {
+    dragging = false;
+  });
+}
+
+function stopNavigationTracking() {
+  if (state.navigation.watchId !== null) {
+    navigator.geolocation.clearWatch(state.navigation.watchId);
+
+    state.navigation.watchId = null;
   }
+
+  state.navigation.previousLocation = null;
+
+  state.navigation.currentLocation = null;
+}
 
 /* =========================================================
    NAVEGAÇÃO DO UTILIZADOR
@@ -1307,6 +1353,188 @@ function getNavigationItems() {
 /* =========================================================
    LOCALIZAÇÃO DO UTILIZADOR
    ========================================================= */
+function showOutsideNavigationPopup() {
+  const popup = document.getElementById("outsideNavigationPopup");
+
+  if (!popup) {
+    return;
+  }
+
+  // Cancela temporizador anterior
+  if (state.navigation.outsideLocationPopupTimer) {
+    clearTimeout(state.navigation.outsideLocationPopupTimer);
+  }
+
+  popup.classList.remove("hidden");
+
+  state.navigation.outsideLocationPopupTimer = setTimeout(() => {
+    closeOutsideNavigationPopup();
+  }, 10000);
+}
+
+function closeOutsideNavigationPopup() {
+  const popup = document.getElementById("outsideNavigationPopup");
+
+  if (popup) {
+    popup.classList.add("hidden");
+  }
+
+  if (state.navigation.outsideLocationPopupTimer) {
+    clearTimeout(state.navigation.outsideLocationPopupTimer);
+
+    state.navigation.outsideLocationPopupTimer = null;
+  }
+}
+
+function showOutsideLocation() {
+  const point = state.navigation.currentLocation;
+
+  if (!point) {
+    return;
+  }
+
+  // Fecha imediatamente o popup
+  closeOutsideNavigationPopup();
+
+  // Renderiza localização
+  renderCurrentLocation(point);
+
+  const [lng, lat] = point.geometry.coordinates;
+
+  const locationLatLng = L.latLng(lat, lng);
+
+  /*
+   * Bounds da FACIM
+   */
+  const limit = state.navigation.limit;
+
+  if (!limit) {
+    state.map.setView(locationLatLng, state.map.getZoom());
+
+    return;
+  }
+
+  /*
+   * Bounds do limite da FACIM
+   */
+  const limitFeature =
+    limit.type === "FeatureCollection" ? limit.features[0] : limit;
+
+  const limitLayer = L.geoJSON(limitFeature);
+
+  const limitBounds = limitLayer.getBounds();
+
+  /*
+   * Junta:
+   *
+   * FACIM + localização atual
+   */
+  const bounds = limitBounds.extend(locationLatLng);
+
+  state.map.fitBounds(bounds, {
+    padding: [40, 40],
+    maxZoom: 18,
+  });
+
+  collapseLegend();
+
+  collapseMapControls();
+}
+
+function clearCurrentLocation() {
+  const marker = state.navigation.currentLocationMarker;
+
+  if (!marker) {
+    return;
+  }
+
+  state.map.removeLayer(marker);
+
+  state.navigation.currentLocationMarker = null;
+}
+
+function renderCurrentLocation(point) {
+  if (!point) {
+    return;
+  }
+
+  const [lng, lat] = point.geometry.coordinates;
+
+  // Se já existe, apenas atualiza
+  if (state.navigation.currentLocationMarker) {
+    state.navigation.currentLocationMarker.setLatLng([lat, lng]);
+
+    return;
+  }
+
+  const marker = L.circleMarker([lat, lng], {
+    radius: 8,
+    color: "#2563eb",
+    weight: 3,
+    fillColor: "#3b82f6",
+    fillOpacity: 0.8,
+  }).addTo(state.map);
+
+  marker.bindTooltip("Minha localização", {
+    direction: "top",
+  });
+
+  state.navigation.currentLocationMarker = marker;
+}
+
+function getUserLocation() {
+  return new Promise((resolve, reject) => {
+
+    if (!navigator.geolocation) {
+      showError("O teu navegador não suporta geolocalização.");
+      reject(new Error("Geolocalização não suportada."));
+      return;
+    }
+
+    state.map.locate({
+      setView: true,
+      maxZoom: 19,
+      ...GEOLOCATION_OPTIONS,
+    });
+
+    state.map.once("locationfound", (event) => {
+
+      const currentPoint = turf.point([
+        event.latlng.lng,
+        event.latlng.lat
+      ]);
+
+      state.navigation.currentLocation = currentPoint;
+
+      resolve(currentPoint);
+    });
+
+    state.map.once("locationerror", (error) => {
+
+      console.error("❌ Erro de geolocalização:", error);
+      console.error("Código:", error.code);
+      console.error("Mensagem:", error.message);
+
+      if (error.code === 1) {
+        showError("Permissão de localização recusada.");
+      } else if (error.code === 2) {
+        showError(
+          "Não foi possível determinar a tua localização. " +
+          "Verifica se o dispositivo tem localização disponível."
+        );
+      } else if (error.code === 3) {
+        showError(
+          "A localização demorou demasiado tempo. " +
+          "Tenta novamente."
+        );
+      } else {
+        showError("Não foi possível obter a tua localização.");
+      }
+
+      reject(error);
+    });
+  });
+}
 
 function locateUser() {
   if (!navigator.geolocation) {
