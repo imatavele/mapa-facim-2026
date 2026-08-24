@@ -3319,6 +3319,10 @@ function showError(message) {
   element.textContent = message;
 
   element.classList.remove("hidden");
+
+  setTimeout(() => {
+    element.classList.add("hidden");
+  }, 5000);
 }
 
 function hideError() {

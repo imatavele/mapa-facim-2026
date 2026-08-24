@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <meta name="description"
+    content="Mapa da FACIM 2026 - Navegação e localização de edifícios, parcelas e espaços da FACIM." />
+
+  <meta name="theme-color" content="#0f172a" />
+
+  <title>Mapa da FACIM 2026</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- CSS da aplicação -->
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+
+<body>
+  <!-- Aplicação -->
+  <div id="app">
+    <!-- Cabeçalho -->
+    <div id="header"></div>
+
+    <!-- Mapa -->
+    <main id="map"></main>
+
+    <!-- Controles flutuantes -->
+    <div id="controls"></div>
+
+    <!-- Legenda -->
+    <div id="map_legend"></div>
+
+    <!-- Indicador de carregamento -->
+    <div id="loading" class="loading-overlay">
+      <div class="loading-card">
+        <div class="spinner"></div>
+        <span>A carregar mapa...</span>
+      </div>
+    </div>
+
+    <!-- Mensagem de erro -->
+    <div id="errorMessage" class="error-message hidden"></div>
+
+    <!-- Informação inferior -->
+    <div id="search_info"></div>
+
+    <div id="navigation"></div>
+    <div id="directions"></div>
+  </div>
+
+  <!-- Controle de mapas e camadas -->
+  <div id="layers"></div>
+
+  <div id="outside_facim"></div>
+
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Turf -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+  <!-- JavaScript principal -->
+  <script type="module">
+    import { initializeApp } from './js/app.js';
+
+    async function includeHTML(id, file) {
+      const response = await fetch(file);
+
+      if (!response.ok) {
+        throw new Error(`Erro ao carregar ${file}`);
+      }
+
+      document.getElementById(id).innerHTML = await response.text();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await includeHTML('header', '../components/header.html');
+      await includeHTML('controls', 'components/controls.html');
+      await includeHTML('map_legend', 'components/legend.html');
+      await includeHTML('search_info', '../components/search-info.html');
+      await includeHTML('directions', '../components/directions.html');
+      await includeHTML('layers', 'components/layers.html');
+
+      initializeApp();
+    });
+  </script>
+
+</body>
+
+</html>

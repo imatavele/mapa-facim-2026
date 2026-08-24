@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "prm",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "PRM", "uso": "Posto Policial" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 32.637429266396509, -25.774734334351486 ], [ 32.637426590572147, -25.774597867309023 ], [ 32.637204497150094, -25.774584488187202 ], [ 32.637207172974456, -25.774718279405317 ], [ 32.637429266396509, -25.774734334351486 ] ] ] } }
+]
+}
