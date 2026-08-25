@@ -1,0 +1,39 @@
+<div class="map-layers-control">
+    <button id="layersButton" class="layers-button" type="button" aria-label="Mapas e camadas" title="Mapas e camadas">
+        ◈
+    </button>
+
+    <div id="layersPanel" class="layers-panel hidden">
+        <div class="layers-panel-title">Mapa</div>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="osm" checked />
+            <span>OpenStreetMap</span>
+        </label>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="cartoLight" />
+            <span>Carto Light</span>
+        </label>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="cartoDark" />
+            <span>Carto Dark</span>
+        </label>
+
+        <label class="layer-option">
+            <input type="radio" name="basemap" value="satellite" />
+            <span>Esri Satellite</span>
+        </label>
+
+        <div class="layers-divider"></div>
+
+        <div class="layers-panel-title">Camadas</div>
+
+        <label class="layer-option">
+            <input id="servicesToggle" type="checkbox" checked />
+            <span>PRM</span>
+        </label>
+
+    </div>
+</div>

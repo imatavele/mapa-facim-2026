@@ -9,7 +9,7 @@
 
 const CONFIG = {
   data: {
-    services: "data/prm.geojson",
+    services: "../data/servicos.geojson",
     limit: "../data/limite.geojson",
   },
 
@@ -23,6 +23,30 @@ const CONFIG = {
   },
   
 };
+
+function decimalToDMS(decimal) {
+  decimal = ((decimal % 360) + 360) % 360;
+
+  const degrees = Math.floor(decimal);
+
+  const minutesDecimal = (decimal - degrees) * 60;
+
+  const minutes = Math.floor(minutesDecimal);
+
+  const seconds = (minutesDecimal - minutes) * 60;
+
+  return {
+    degrees,
+    minutes,
+    seconds,
+  };
+}
+
+function formatDMS(decimal) {
+  const dms = decimalToDMS(decimal);
+
+  return `${dms.degrees}° ` + `${dms.minutes}' ` + `${dms.seconds.toFixed(2)}"`;
+}
 
 const GEOLOCATION_OPTIONS = {
   enableHighAccuracy: true,
@@ -268,8 +292,8 @@ async function loadGeoJSONData() {
 
     const limit = await limitResponse.json();
 
-    const services = await servicesResponse.json();
-
+    let services = await servicesResponse.json();
+    console.log(services.features.filter(s => s.properties.uso === "Emissão de documentos"));
     state.navigation.limit = limit;
 
     /*

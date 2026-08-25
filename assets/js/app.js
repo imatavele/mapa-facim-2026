@@ -107,9 +107,7 @@ const state = {
    ========================================================= */
 
 function showLiveNavigationBox() {
-  const box = document.getElementById(
-    "liveNavigationBox"
-  );
+  const box = document.getElementById("liveNavigationBox");
 
   if (!box) {
     return;
@@ -119,25 +117,23 @@ function showLiveNavigationBox() {
 
   state.navigation.navigationBox = box;
 
-  const closeLiveNavigationButton =
-    document.getElementById("closeLiveNavigation");
+  const closeLiveNavigationButton = document.getElementById(
+    "closeLiveNavigation",
+  );
 
   if (closeLiveNavigationButton) {
-    closeLiveNavigationButton.addEventListener(
-      "click",
-      hideLiveNavigationBox
-    );
+    closeLiveNavigationButton.addEventListener("click", hideLiveNavigationBox);
   }
 }
 
 function hideLiveNavigationBox() {
-  const box = document.getElementById(
-    "liveNavigationBox"
-  );
+  const box = document.getElementById("liveNavigationBox");
 
   if (!box) {
     return;
-  } else { console.log('liveNavigationBox nao encontrado'); }
+  } else {
+    console.log("liveNavigationBox nao encontrado");
+  }
 
   box.classList.add("hidden");
 
@@ -145,7 +141,6 @@ function hideLiveNavigationBox() {
 }
 
 function updateLiveNavigation(position) {
-
   if (!state.navigation.destination) {
     return;
   }
@@ -155,69 +150,38 @@ function updateLiveNavigation(position) {
     position.coords.latitude,
   ]);
 
-  const destination =
-    state.navigation.destination.point;
+  const destination = state.navigation.destination.point;
 
   // Distância atual até ao destino
-  const distanceMeters = turf.distance(
-    currentPoint,
-    destination,
-    {
-      units: "meters",
-    }
-  );
+  const distanceMeters = turf.distance(currentPoint, destination, {
+    units: "meters",
+  });
 
   // Verifica chegada
-  if (
-    distanceMeters <=
-    NAVIGATION_ARRIVAL_DISTANCE
-  ) {
-
-    handleNavigationArrival(
-      distanceMeters
-    );
+  if (distanceMeters <= NAVIGATION_ARRIVAL_DISTANCE) {
+    handleNavigationArrival(distanceMeters);
 
     return;
   }
 
   // Bearing da posição atual para o destino
-  const destinationBearing =
-    turf.bearing(
-      currentPoint,
-      destination
-    );
+  const destinationBearing = turf.bearing(currentPoint, destination);
 
-  updateLiveNavigationDisplay(
-    distanceMeters,
-    destinationBearing,
-    position
-  );
+  updateLiveNavigationDisplay(distanceMeters, destinationBearing, position);
 
   // Guarda posição atual
-  state.navigation.currentLocation =
-    currentPoint;
+  state.navigation.currentLocation = currentPoint;
 }
 
 function handleNavigationArrival(distanceMeters) {
+  const status = document.getElementById("liveNavigationStatus");
 
-  const status =
-    document.getElementById(
-      "liveNavigationStatus"
-    );
+  const distance = document.getElementById("liveNavigationDistance");
 
-  const distance =
-    document.getElementById(
-      "liveNavigationDistance"
-    );
-
-  const direction =
-    document.getElementById(
-      "liveNavigationDirection"
-    );
+  const direction = document.getElementById("liveNavigationDirection");
 
   if (distance) {
-    distance.textContent =
-      `${Math.round(distanceMeters)} m`;
+    distance.textContent = `${Math.round(distanceMeters)} m`;
   }
 
   if (direction) {
@@ -225,37 +189,25 @@ function handleNavigationArrival(distanceMeters) {
   }
 
   if (status) {
+    status.textContent = "🎯 Chegaste ao destino";
 
-    status.textContent =
-      "🎯 Chegaste ao destino";
-
-    status.className =
-      "live-navigation-status correct";
+    status.className = "live-navigation-status correct";
   }
 
   // Para o acompanhamento GPS
   stopNavigationTracking();
 }
 
-function formatNavigationDistance(
-  distanceMeters
-) {
-
+function formatNavigationDistance(distanceMeters) {
   if (distanceMeters < 1000) {
-
     return `${Math.round(distanceMeters)} m`;
-
   }
 
-  return `${(
-    distanceMeters / 1000
-  ).toFixed(2)} km`;
+  return `${(distanceMeters / 1000).toFixed(2)} km`;
 }
 
 function bearingToDirection(bearing) {
-
-  const normalized =
-    ((bearing % 360) + 360) % 360;
+  const normalized = ((bearing % 360) + 360) % 360;
 
   if (normalized === 0) {
     return "N";
@@ -288,59 +240,31 @@ function bearingToDirection(bearing) {
   return "NW";
 }
 
-function updateLiveNavigationDisplay(
-  distanceMeters,
-  bearing,
-  position
-) {
+function updateLiveNavigationDisplay(distanceMeters, bearing, position) {
+  const distanceElement = document.getElementById("liveNavigationDistance");
 
-  const distanceElement =
-    document.getElementById(
-      "liveNavigationDistance"
-    );
+  const directionElement = document.getElementById("liveNavigationDirection");
 
-  const directionElement =
-    document.getElementById(
-      "liveNavigationDirection"
-    );
+  const statusElement = document.getElementById("liveNavigationStatus");
 
-  const statusElement =
-    document.getElementById(
-      "liveNavigationStatus"
-    );
-
-  if (
-    !distanceElement ||
-    !directionElement ||
-    !statusElement
-  ) {
+  if (!distanceElement || !directionElement || !statusElement) {
     return;
   }
 
-  distanceElement.textContent =
-    formatNavigationDistance(
-      distanceMeters
-    );
+  distanceElement.textContent = formatNavigationDistance(distanceMeters);
 
-  const direction =
-    bearingToDirection(bearing);
+  const direction = bearingToDirection(bearing);
 
-  directionElement.textContent =
-    `${formatDMS(bearing)} ${direction}`;
+  directionElement.textContent = `${formatDMS(bearing)} ${direction}`;
 
-  updateNavigationMovementStatus(
-    position,
-    bearing,
-    statusElement
-  );
+  updateNavigationMovementStatus(position, bearing, statusElement);
 }
 
 function updateNavigationMovementStatus(
   position,
   destinationBearing,
-  statusElement
+  statusElement,
 ) {
-
   let movementBearing = null;
 
   /*
@@ -351,75 +275,49 @@ function updateNavigationMovementStatus(
     typeof position.coords.heading === "number" &&
     !Number.isNaN(position.coords.heading)
   ) {
-
-    movementBearing =
-      position.coords.heading;
-  }
+    movementBearing = position.coords.heading;
+  } else if (state.navigation.previousLocation) {
 
   /*
    * 2. Se o GPS não fornecer heading,
    * calculamos pelo deslocamento.
    */
-  else if (
-    state.navigation.previousLocation
-  ) {
-
-    const previousLocation =
-      state.navigation.previousLocation;
+    const previousLocation = state.navigation.previousLocation;
 
     const currentPoint = turf.point([
       position.coords.longitude,
       position.coords.latitude,
     ]);
 
-    const movementDistance =
-      turf.distance(
-        previousLocation,
-        currentPoint,
-        {
-          units: "meters",
-        }
-      );
+    const movementDistance = turf.distance(previousLocation, currentPoint, {
+      units: "meters",
+    });
 
     /*
      * Se praticamente não se moveu,
      * não tentamos determinar direção.
      */
-    if (
-      movementDistance >=
-      NAVIGATION_MIN_MOVEMENT
-    ) {
-
-      movementBearing =
-        turf.bearing(
-          previousLocation,
-          currentPoint
-        );
+    if (movementDistance >= NAVIGATION_MIN_MOVEMENT) {
+      movementBearing = turf.bearing(previousLocation, currentPoint);
     }
   }
-
 
   /*
    * Se não conseguimos determinar
    * a direção do movimento.
    */
   if (movementBearing === null) {
+    statusElement.textContent = "A aguardar movimento...";
 
-    statusElement.textContent =
-      "A aguardar movimento...";
+    statusElement.className = "live-navigation-status neutral";
 
-    statusElement.className =
-      "live-navigation-status neutral";
-
-    state.navigation.previousLocation =
-      turf.point([
-        position.coords.longitude,
-        position.coords.latitude,
-      ]);
+    state.navigation.previousLocation = turf.point([
+      position.coords.longitude,
+      position.coords.latitude,
+    ]);
 
     return;
   }
-
 
   /*
    * Diferença entre:
@@ -428,286 +326,160 @@ function updateNavigationMovementStatus(
    * +
    * direção em que deveria ir.
    */
-  const difference =
-    angularDifference(
-      movementBearing,
-      destinationBearing
-    );
+  const difference = angularDifference(movementBearing, destinationBearing);
 
+  if (difference <= NAVIGATION_DIRECTION_TOLERANCE) {
+    statusElement.textContent = "✓ Está indo na direção certa";
 
-  if (
-    difference <=
-    NAVIGATION_DIRECTION_TOLERANCE
-  ) {
-
-    statusElement.textContent =
-      "✓ Está indo na direção certa";
-
-    statusElement.className =
-      "live-navigation-status correct";
-
+    statusElement.className = "live-navigation-status correct";
   } else {
+    statusElement.textContent = "↗ Está fora da direção do destino";
 
-    statusElement.textContent =
-      "↗ Está fora da direção do destino";
-
-    statusElement.className =
-      "live-navigation-status wrong";
+    statusElement.className = "live-navigation-status wrong";
   }
-
 
   /*
    * Guarda a posição para o próximo
    * cálculo de movimento.
    */
-  state.navigation.previousLocation =
-    turf.point([
-      position.coords.longitude,
-      position.coords.latitude,
-    ]);
+  state.navigation.previousLocation = turf.point([
+    position.coords.longitude,
+    position.coords.latitude,
+  ]);
 }
 
-function angularDifference(
-  a,
-  b
-) {
-
-  let difference =
-    Math.abs(a - b);
+function angularDifference(a, b) {
+  let difference = Math.abs(a - b);
 
   if (difference > 180) {
-    difference =
-      360 - difference;
+    difference = 360 - difference;
   }
 
   return difference;
 }
 
 function startNavigationTracking() {
-
   if (!navigator.geolocation) {
-
     showNavigationMessage(
       "Este dispositivo não disponibiliza localização.",
-      5000
+      5000,
     );
 
     return;
   }
 
   // Evita dois observers simultâneos
-  if (
-    state.navigation.watchId !== null
-  ) {
-
-    navigator.geolocation.clearWatch(
-      state.navigation.watchId
-    );
+  if (state.navigation.watchId !== null) {
+    navigator.geolocation.clearWatch(state.navigation.watchId);
   }
 
-  state.navigation.previousLocation =
-    null;
+  state.navigation.previousLocation = null;
 
+  state.navigation.watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const point = turf.point([
+        position.coords.longitude,
+        position.coords.latitude,
+      ]);
+      const firstLocation = !state.navigation.currentLocation;
 
-  state.navigation.watchId =
-    navigator.geolocation.watchPosition(
+      state.navigation.currentLocation = point;
+      /*
+       * Primeira posição recebida
+       */
+      if (firstLocation) {
+        handleNavigationStartLocation();
+      }
 
-      (position) => {
+      updateLiveNavigation(position);
+    },
 
-        const point = turf.point([
-          position.coords.longitude,
-          position.coords.latitude,
-        ]);
-        const firstLocation =
-          !state.navigation.currentLocation;
+    (error) => {
+      console.error("Navigation GPS:", error);
 
+      const status = document.getElementById("liveNavigationStatus");
 
-        state.navigation.currentLocation =
-          point;
-        /*
-     * Primeira posição recebida
-     */
-        if (firstLocation) {
+      if (status) {
+        status.textContent = "Não foi possível atualizar a localização.";
 
-          handleNavigationStartLocation();
-        }
+        status.className = "live-navigation-status wrong";
+      }
+    },
 
-        updateLiveNavigation(
-          position
-        );
-
-      },
-
-      (error) => {
-
-        console.error(
-          "Navigation GPS:",
-          error
-        );
-
-        const status =
-          document.getElementById(
-            "liveNavigationStatus"
-          );
-
-        if (status) {
-
-          status.textContent =
-            "Não foi possível atualizar a localização.";
-
-          status.className =
-            "live-navigation-status wrong";
-        }
-      },
-
-      GEOLOCATION_OPTIONS
-    );
+    GEOLOCATION_OPTIONS,
+  );
 }
 
 function makeNavigationBoxDraggable() {
+  const box = document.getElementById("liveNavigationBox");
 
-  const box =
-    document.getElementById(
-      "liveNavigationBox"
-    );
-
-  const header =
-    box?.querySelector(
-      ".live-navigation-header"
-    );
+  const header = box?.querySelector(".live-navigation-header");
 
   if (!box || !header) {
     return;
   }
-
 
   let dragging = false;
 
   let offsetX = 0;
   let offsetY = 0;
 
+  header.addEventListener("pointerdown", (event) => {
+    dragging = true;
 
-  header.addEventListener(
-    "pointerdown",
-    (event) => {
+    const rect = box.getBoundingClientRect();
 
-      dragging = true;
+    offsetX = event.clientX - rect.left;
 
-      const rect =
-        box.getBoundingClientRect();
+    offsetY = event.clientY - rect.top;
 
-      offsetX =
-        event.clientX - rect.left;
+    header.setPointerCapture(event.pointerId);
+  });
 
-      offsetY =
-        event.clientY - rect.top;
-
-      header.setPointerCapture(
-        event.pointerId
-      );
+  header.addEventListener("pointermove", (event) => {
+    if (!dragging) {
+      return;
     }
-  );
 
+    const app = document.getElementById("app");
 
-  header.addEventListener(
-    "pointermove",
-    (event) => {
+    const appRect = app.getBoundingClientRect();
 
-      if (!dragging) {
-        return;
-      }
+    let left = event.clientX - appRect.left - offsetX;
 
+    let top = event.clientY - appRect.top - offsetY;
 
-      const app =
-        document.getElementById(
-          "app"
-        );
+    // Não deixar sair completamente do mapa
+    left = Math.max(0, Math.min(left, appRect.width - box.offsetWidth));
 
-      const appRect =
-        app.getBoundingClientRect();
+    top = Math.max(0, Math.min(top, appRect.height - box.offsetHeight));
 
+    box.style.left = `${left}px`;
 
-      let left =
-        event.clientX -
-        appRect.left -
-        offsetX;
+    box.style.top = `${top}px`;
 
-      let top =
-        event.clientY -
-        appRect.top -
-        offsetY;
+    box.style.transform = "none";
+  });
 
+  header.addEventListener("pointerup", () => {
+    dragging = false;
+  });
 
-      // Não deixar sair completamente do mapa
-      left = Math.max(
-        0,
-        Math.min(
-          left,
-          appRect.width -
-          box.offsetWidth
-        )
-      );
-
-
-      top = Math.max(
-        0,
-        Math.min(
-          top,
-          appRect.height -
-          box.offsetHeight
-        )
-      );
-
-
-      box.style.left =
-        `${left}px`;
-
-      box.style.top =
-        `${top}px`;
-
-      box.style.transform =
-        "none";
-    }
-  );
-
-
-  header.addEventListener(
-    "pointerup",
-    () => {
-
-      dragging = false;
-    }
-  );
-
-
-  header.addEventListener(
-    "pointercancel",
-    () => {
-
-      dragging = false;
-    }
-  );
+  header.addEventListener("pointercancel", () => {
+    dragging = false;
+  });
 }
 
 function stopNavigationTracking() {
+  if (state.navigation.watchId !== null) {
+    navigator.geolocation.clearWatch(state.navigation.watchId);
 
-  if (
-    state.navigation.watchId !== null
-  ) {
-
-    navigator.geolocation.clearWatch(
-      state.navigation.watchId
-    );
-
-    state.navigation.watchId =
-      null;
+    state.navigation.watchId = null;
   }
 
-  state.navigation.previousLocation =
-    null;
+  state.navigation.previousLocation = null;
 
-  state.navigation.currentLocation =
-    null;
+  state.navigation.currentLocation = null;
 }
 
 /* =========================================================
@@ -887,10 +659,10 @@ function initializeMap() {
   }).addTo(state.map);
 
   /*
-  * =====================================================
-  * SERVICOS
-  * =====================================================
-  */
+   * =====================================================
+   * SERVICOS
+   * =====================================================
+   */
 
   state.servicesLayer = L.geoJSON(null, {
     style: {
@@ -905,10 +677,7 @@ function initializeMap() {
 
     onEachFeature: handleServiceFeature,
   }).addTo(state.map);
-
 }
-
-
 
 /* =========================================================
    EVENTOS DO MAPA
@@ -1050,22 +819,29 @@ async function loadGeoJSONData() {
   hideError();
 
   try {
-    const [buildingsResponse, parcelsResponse, limitResponse, wcsResponse, gatesResponse, servicesResponse, parksResponse] =
-      await Promise.all([
-        fetch(CONFIG.data.buildings),
+    const [
+      buildingsResponse,
+      parcelsResponse,
+      limitResponse,
+      wcsResponse,
+      gatesResponse,
+      servicesResponse,
+      parksResponse,
+    ] = await Promise.all([
+      fetch(CONFIG.data.buildings),
 
-        fetch(CONFIG.data.parcels),
+      fetch(CONFIG.data.parcels),
 
-        fetch(CONFIG.data.limit),
+      fetch(CONFIG.data.limit),
 
-        fetch(CONFIG.data.wcs),
+      fetch(CONFIG.data.wcs),
 
-        fetch(CONFIG.data.gates),
+      fetch(CONFIG.data.gates),
 
-        fetch(CONFIG.data.services),
+      fetch(CONFIG.data.services),
 
-        fetch(CONFIG.data.parks),
-      ]);
+      fetch(CONFIG.data.parks),
+    ]);
 
     if (!buildingsResponse.ok) {
       throw new Error("Não foi possível carregar edificios.geojson");
@@ -1155,7 +931,7 @@ async function loadGeoJSONData() {
 
     showError(
       "Não foi possível carregar os dados do mapa. " +
-      "Verifique se os arquivos GeoJSON estão em /data/.",
+        "Verifique se os arquivos GeoJSON estão em /data/.",
     );
   } finally {
     showLoading(false);
@@ -1324,14 +1100,15 @@ function renderSearchResults(results) {
                     ${escapeHTML(item.type)}
                 </div>
 
-                ${detail
-        ? `
+                ${
+                  detail
+                    ? `
                     <div class="result-detail">
                         ${escapeHTML(detail)}
                     </div>
                     `
-        : ""
-      }
+                    : ""
+                }
 
             `;
 
@@ -1428,7 +1205,7 @@ function getFeatureTitle(feature, type, index) {
 
 function getFeatureDescription(feature) {
   const properties = feature.properties || {};
-  console.log("properties", properties)
+  console.log("properties", properties);
   const entries = Object.entries(properties);
 
   if (!entries.length) {
@@ -1436,15 +1213,12 @@ function getFeatureDescription(feature) {
   }
 
   return entries
-    .filter(([key, value]) =>
-      value !== null &&
-      value !== undefined &&
-      String(value).trim() !== ""
+    .filter(
+      ([key, value]) =>
+        value !== null && value !== undefined && String(value).trim() !== "",
     )
     .slice(0, 3)
-    .map(([key, value]) =>
-      `${translateKey(key)}: ${value}`
-    )
+    .map(([key, value]) => `${translateKey(key)}: ${value}`)
     .join(" • ");
 }
 
@@ -1557,21 +1331,23 @@ function selectFeature(feature, layer, type) {
 /* =========================================================
    POPUP
    ========================================================= */
-const visibleProps = ["code", "name", "description", "uso", "pavilhao", "expositor"];
+const visibleProps = [
+  "code",
+  "name",
+  "description",
+  "uso",
+  "pavilhao",
+  "expositor",
+];
 
 function collapseLegend() {
   const collapsed = legendItems.classList.toggle("collapsed");
 
-  toggleLegend.setAttribute(
-    "aria-expanded",
-    String(!collapsed)
-  );
+  toggleLegend.setAttribute("aria-expanded", String(!collapsed));
 
   toggleLegend.textContent = collapsed ? "↑" : "↓";
 
-  toggleLegend.title = collapsed
-    ? "Mostrar legenda"
-    : "Ocultar legenda";
+  toggleLegend.title = collapsed ? "Mostrar legenda" : "Ocultar legenda";
 }
 
 function createPopupContent(feature, type) {
@@ -1724,10 +1500,7 @@ function clearHighlight() {
 function collapseMapControls() {
   const collapsed = mapControlsItems.classList.toggle("collapsed");
 
-  toggleMapControls.setAttribute(
-    "aria-expanded",
-    String(!collapsed)
-  );
+  toggleMapControls.setAttribute("aria-expanded", String(!collapsed));
 
   toggleMapControls.textContent = collapsed ? "☰" : "×";
 
@@ -1737,12 +1510,13 @@ function collapseMapControls() {
 }
 
 function initializeEvents() {
+  const clearNavigationOrigin = document.getElementById(
+    "clearNavigationOrigin",
+  );
 
-  const clearNavigationOrigin =
-    document.getElementById("clearNavigationOrigin");
-
-  const clearNavigationDestination =
-    document.getElementById("clearNavigationDestination");
+  const clearNavigationDestination = document.getElementById(
+    "clearNavigationDestination",
+  );
 
   const searchInput = document.getElementById("searchInput");
 
@@ -1754,60 +1528,42 @@ function initializeEvents() {
 
   const mapControlsItems = document.getElementById("mapControlsItems");
 
-  const showOutsideLocationButton =
-    document.getElementById(
-      "showOutsideLocation"
-    );
+  const showOutsideLocationButton = document.getElementById(
+    "showOutsideLocation",
+  );
 
   if (showOutsideLocationButton) {
-
-    showOutsideLocationButton.addEventListener(
-      "click",
-      showOutsideLocation
-    );
+    showOutsideLocationButton.addEventListener("click", showOutsideLocation);
   }
 
-
-  const closeOutsideLocationButton =
-    document.getElementById(
-      "closeOutsideLocation"
-    );
+  const closeOutsideLocationButton = document.getElementById(
+    "closeOutsideLocation",
+  );
 
   if (closeOutsideLocationButton) {
-
     closeOutsideLocationButton.addEventListener(
       "click",
-      closeOutsideNavigationPopup
+      closeOutsideNavigationPopup,
     );
   }
 
   if (clearNavigationOrigin) {
     clearNavigationOrigin.addEventListener("click", () => {
-
-      document.getElementById(
-        "navigationOriginSearch"
-      ).value = "";
+      document.getElementById("navigationOriginSearch").value = "";
 
       state.navigation.origin = null;
 
-      document.getElementById(
-        "navigationOriginResults"
-      ).innerHTML = "";
+      document.getElementById("navigationOriginResults").innerHTML = "";
     });
   }
 
   if (clearNavigationDestination) {
     clearNavigationDestination.addEventListener("click", () => {
-
-      document.getElementById(
-        "navigationDestinationSearch"
-      ).value = "";
+      document.getElementById("navigationDestinationSearch").value = "";
 
       state.navigation.destination = null;
 
-      document.getElementById(
-        "navigationDestinationResults"
-      ).innerHTML = "";
+      document.getElementById("navigationDestinationResults").innerHTML = "";
     });
   }
 
@@ -1953,26 +1709,22 @@ function initializeEvents() {
     });
 
   /*
- * WCs
- */
-  document
-    .getElementById("wcsToggle")
-    .addEventListener("change", (event) => {
-      toggleLayer(state.wcsLayer, event.target.checked);
-    });
+   * WCs
+   */
+  document.getElementById("wcsToggle").addEventListener("change", (event) => {
+    toggleLayer(state.wcsLayer, event.target.checked);
+  });
 
   /*
    * Bilheteiras
    */
-  document
-    .getElementById("gatesToggle")
-    .addEventListener("change", (event) => {
-      toggleLayer(state.gatesLayer, event.target.checked);
-    });
+  document.getElementById("gatesToggle").addEventListener("change", (event) => {
+    toggleLayer(state.gatesLayer, event.target.checked);
+  });
 
   /*
- * Servicos
- */
+   * Servicos
+   */
   document
     .getElementById("servicesToggle")
     .addEventListener("change", (event) => {
@@ -1989,9 +1741,9 @@ function initializeEvents() {
     });
 
   /*
- * Não fechar o painel quando
- * clicar dentro dele.
- */
+   * Não fechar o painel quando
+   * clicar dentro dele.
+   */
 
   layersPanel.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -2048,16 +1800,11 @@ function toggleNavigationForm() {
 
   const collapsed = panel.classList.toggle("collapsed");
 
-  button.setAttribute(
-    "aria-expanded",
-    String(!collapsed)
-  );
+  button.setAttribute("aria-expanded", String(!collapsed));
 
   button.textContent = collapsed ? "▶" : "◀";
 
-  button.title = collapsed
-    ? "Mostrar navegação"
-    : "Recolher";
+  button.title = collapsed ? "Mostrar navegação" : "Recolher";
 }
 
 function validateNavigation() {
@@ -2136,7 +1883,6 @@ function renderNavigationSearchResults(query, mode) {
     button.innerHTML = html;
 
     button.addEventListener("click", () => {
-
       const inputId =
         mode === "origin"
           ? "navigationOriginSearch"
@@ -2249,7 +1995,8 @@ function selectNavigationItem(item, mode) {
       type: item.type,
     };
 
-    document.getElementById("navigationOriginSearch").value = getNavigationTypeLabel(item.type) + ' ' + item.title;
+    document.getElementById("navigationOriginSearch").value =
+      getNavigationTypeLabel(item.type) + " " + item.title;
 
     document.getElementById("navigationOriginResults").innerHTML = "";
   }
@@ -2265,7 +2012,8 @@ function selectNavigationItem(item, mode) {
       type: item.type,
     };
 
-    document.getElementById("navigationDestinationSearch").value = getNavigationTypeLabel(item.type) + ' ' + item.title;
+    document.getElementById("navigationDestinationSearch").value =
+      getNavigationTypeLabel(item.type) + " " + item.title;
 
     document.getElementById("navigationDestinationResults").innerHTML = "";
   }
@@ -2337,12 +2085,11 @@ async function determineNavigationOrigin() {
         "Selecione obrigatoriamente uma origem.";
     },
 
-    GEOLOCATION_OPTIONS
+    GEOLOCATION_OPTIONS,
   );
 }
 
 function isPointInsideLimit(point) {
-
   if (!state.navigation.limit) {
     return false;
   }
@@ -2351,9 +2098,7 @@ function isPointInsideLimit(point) {
     const limit = state.navigation.limit;
 
     const limitFeature =
-      limit.type === "FeatureCollection"
-        ? limit.features[0]
-        : limit;
+      limit.type === "FeatureCollection" ? limit.features[0] : limit;
     return turf.booleanPointInPolygon(point, limitFeature);
   } catch (error) {
     console.error("Erro ao verificar limite:", error);
@@ -2446,7 +2191,10 @@ function showNavigationMessage(message, duration = 3000) {
 
 function requestCurrentLocation(useAsOrigin = false) {
   if (!navigator.geolocation) {
-    showNavigationMessage("Este dispositivo não disponibiliza localização.", 3000);
+    showNavigationMessage(
+      "Este dispositivo não disponibiliza localização.",
+      3000,
+    );
 
     return;
   }
@@ -2486,7 +2234,7 @@ function requestCurrentLocation(useAsOrigin = false) {
 
       setNavigationStatus(
         "Não foi possível obter a localização. " +
-        "Selecione uma origem manualmente.",
+          "Selecione uma origem manualmente.",
       );
 
       state.navigation.insideLimit = false;
@@ -2523,8 +2271,8 @@ function checkNavigationLocation(point) {
 
     setNavigationStatus(
       "Está dentro da área da FACIM. " +
-      "A localização atual foi definida como origem. " +
-      "Pode alterá-la se desejar.",
+        "A localização atual foi definida como origem. " +
+        "Pode alterá-la se desejar.",
     );
   } else {
     /*
@@ -2537,29 +2285,24 @@ function checkNavigationLocation(point) {
     document.getElementById("navigationOriginSearch").value = "";
 
     setNavigationStatus(
-      "Sua localização actual está fora do recinto da FACIM. " + "Selecione obrigatoriamente uma origem.",
+      "Sua localização actual está fora do recinto da FACIM. " +
+        "Selecione obrigatoriamente uma origem.",
     );
   }
 }
 
 function handleNavigationStartLocation() {
-
-  const point =
-    state.navigation.currentLocation;
+  const point = state.navigation.currentLocation;
 
   if (!point) {
     return;
   }
 
-  const inside =
-    isPointInsideLimit(point);
+  const inside = isPointInsideLimit(point);
 
-  state.navigation.insideLimit =
-    inside;
-
+  state.navigation.insideLimit = inside;
 
   if (inside) {
-
     /*
      * Dentro da FACIM:
      * mostra automaticamente.
@@ -2568,7 +2311,6 @@ function handleNavigationStartLocation() {
 
     return;
   }
-
 
   /*
    * Fora da FACIM:
@@ -2602,36 +2344,25 @@ function useCurrentLocationAsOrigin() {
 }
 
 function startNavigation() {
-
   if (!validateNavigation()) {
     return;
   }
 
   const origin = state.navigation.origin.point;
 
-  const destination =
-    state.navigation.destination.point;
+  const destination = state.navigation.destination.point;
 
   // Desenha a navegação existente
-  drawNavigation(
-    origin,
-    destination
-  );
+  drawNavigation(origin, destination);
 
   // Recolhe o painel de configuração
-  const panel =
-    document.getElementById(
-      "navigationPanel"
-    );
+  const panel = document.getElementById("navigationPanel");
 
   if (panel) {
     panel.classList.add("collapsed");
   }
 
-  const toggle =
-    document.getElementById(
-      "toggleNavigationForm"
-    );
+  const toggle = document.getElementById("toggleNavigationForm");
 
   if (toggle) {
     toggle.textContent = "▶";
@@ -2702,12 +2433,12 @@ function drawNavigation(origin, destination) {
    * Linha
    */
 
-  const line = turf.lineString([originCoords, destinationCoords]);
+  //const line = turf.lineString([originCoords, destinationCoords]);
 
   /*
    * Desenha linha no mapa
    */
-
+  /*
   state.navigation.lineLayer = L.geoJSON(line, {
     style: {
       color: "#dc2626",
@@ -2719,6 +2450,7 @@ function drawNavigation(origin, destination) {
       dashArray: "10 7",
     },
   }).addTo(state.map);
+  */
 
   /*
    * Origem
@@ -2736,7 +2468,9 @@ function drawNavigation(origin, destination) {
     fillOpacity: 0.9,
   })
     .addTo(state.map)
-    .bindPopup(`<strong>Origem</strong><br><br>${document.getElementById("navigationOriginSearch")?.value}`);
+    .bindPopup(
+      `<strong>Origem</strong><br><br>${document.getElementById("navigationOriginSearch")?.value}`,
+    );
 
   /*
    * Destino
@@ -2754,7 +2488,9 @@ function drawNavigation(origin, destination) {
     fillOpacity: 0.9,
   })
     .addTo(state.map)
-    .bindPopup(`<strong>Destino</strong><br><br>${document.getElementById("navigationDestinationSearch")?.value}`);
+    .bindPopup(
+      `<strong>Destino</strong><br><br>${document.getElementById("navigationDestinationSearch")?.value}`,
+    );
 
   /*
    * Enquadrar
@@ -3009,7 +2745,6 @@ function exitNavigation() {
 }
 
 function fitNavigationLimit() {
-
   const limit = state.navigation.limit;
 
   if (!limit) {
@@ -3017,7 +2752,6 @@ function fitNavigationLimit() {
   }
 
   try {
-
     const layer = L.geoJSON(limit);
 
     const bounds = layer.getBounds();
@@ -3026,20 +2760,12 @@ function fitNavigationLimit() {
       return;
     }
 
-    state.map.flyTo(
-      [-25.772372919351948, 32.63568462891243],
-      17,
-      {
-        duration: 1.5,
-      }
-    );
+    state.map.flyTo([-25.772372919351948, 32.63568462891243], 17, {
+      duration: 1.5,
+    });
     toggleNavigationForm();
-
   } catch (error) {
-    console.error(
-      "Erro ao enquadrar limite da FACIM:",
-      error
-    );
+    console.error("Erro ao enquadrar limite da FACIM:", error);
   }
 }
 
@@ -3052,64 +2778,40 @@ function closeNavigation() {
    ========================================================= */
 
 function showOutsideNavigationPopup() {
-
-  const popup =
-    document.getElementById(
-      "outsideNavigationPopup"
-    );
+  const popup = document.getElementById("outsideNavigationPopup");
 
   if (!popup) {
     return;
   }
 
   // Cancela temporizador anterior
-  if (
-    state.navigation.outsideLocationPopupTimer
-  ) {
-
-    clearTimeout(
-      state.navigation.outsideLocationPopupTimer
-    );
+  if (state.navigation.outsideLocationPopupTimer) {
+    clearTimeout(state.navigation.outsideLocationPopupTimer);
   }
 
   popup.classList.remove("hidden");
 
-  state.navigation.outsideLocationPopupTimer =
-    setTimeout(() => {
-
-      closeOutsideNavigationPopup();
-
-    }, 10000);
+  state.navigation.outsideLocationPopupTimer = setTimeout(() => {
+    closeOutsideNavigationPopup();
+  }, 10000);
 }
 
 function closeOutsideNavigationPopup() {
-
-  const popup =
-    document.getElementById(
-      "outsideNavigationPopup"
-    );
+  const popup = document.getElementById("outsideNavigationPopup");
 
   if (popup) {
     popup.classList.add("hidden");
   }
 
-  if (
-    state.navigation.outsideLocationPopupTimer
-  ) {
+  if (state.navigation.outsideLocationPopupTimer) {
+    clearTimeout(state.navigation.outsideLocationPopupTimer);
 
-    clearTimeout(
-      state.navigation.outsideLocationPopupTimer
-    );
-
-    state.navigation.outsideLocationPopupTimer =
-      null;
+    state.navigation.outsideLocationPopupTimer = null;
   }
 }
 
 function showOutsideLocation() {
-
-  const point =
-    state.navigation.currentLocation;
+  const point = state.navigation.currentLocation;
 
   if (!point) {
     return;
@@ -3121,74 +2823,50 @@ function showOutsideLocation() {
   // Renderiza localização
   renderCurrentLocation(point);
 
-  const [lng, lat] =
-    point.geometry.coordinates;
+  const [lng, lat] = point.geometry.coordinates;
 
-  const locationLatLng =
-    L.latLng(lat, lng);
-
+  const locationLatLng = L.latLng(lat, lng);
 
   /*
    * Bounds da FACIM
    */
-  const limit =
-    state.navigation.limit;
+  const limit = state.navigation.limit;
 
   if (!limit) {
-    state.map.setView(
-      locationLatLng,
-      state.map.getZoom()
-    );
+    state.map.setView(locationLatLng, state.map.getZoom());
 
     return;
   }
-
 
   /*
    * Bounds do limite da FACIM
    */
   const limitFeature =
-    limit.type === "FeatureCollection"
-      ? limit.features[0]
-      : limit;
+    limit.type === "FeatureCollection" ? limit.features[0] : limit;
 
+  const limitLayer = L.geoJSON(limitFeature);
 
-  const limitLayer =
-    L.geoJSON(limitFeature);
-
-
-  const limitBounds =
-    limitLayer.getBounds();
-
+  const limitBounds = limitLayer.getBounds();
 
   /*
    * Junta:
    *
    * FACIM + localização atual
    */
-  const bounds =
-    limitBounds.extend(
-      locationLatLng
-    );
+  const bounds = limitBounds.extend(locationLatLng);
 
-  state.map.fitBounds(
-    bounds,
-    {
-      padding: [40, 40],
-      maxZoom: 18,
-    }
-  );
+  state.map.fitBounds(bounds, {
+    padding: [40, 40],
+    maxZoom: 18,
+  });
 
   collapseLegend();
 
   collapseMapControls();
 }
 
-
 function clearCurrentLocation() {
-
-  const marker =
-    state.navigation.currentLocationMarker;
+  const marker = state.navigation.currentLocationMarker;
 
   if (!marker) {
     return;
@@ -3200,7 +2878,6 @@ function clearCurrentLocation() {
 }
 
 function renderCurrentLocation(point) {
-
   if (!point) {
     return;
   }
@@ -3209,35 +2886,24 @@ function renderCurrentLocation(point) {
 
   // Se já existe, apenas atualiza
   if (state.navigation.currentLocationMarker) {
-
-    state.navigation.currentLocationMarker.setLatLng([
-      lat,
-      lng
-    ]);
+    state.navigation.currentLocationMarker.setLatLng([lat, lng]);
 
     return;
   }
 
-  const marker = L.circleMarker(
-    [lat, lng],
-    {
-      radius: 8,
-      color: "#2563eb",
-      weight: 3,
-      fillColor: "#3b82f6",
-      fillOpacity: 0.8,
-    }
-  ).addTo(state.map);
+  const marker = L.circleMarker([lat, lng], {
+    radius: 8,
+    color: "#2563eb",
+    weight: 3,
+    fillColor: "#3b82f6",
+    fillOpacity: 0.8,
+  }).addTo(state.map);
 
-  marker.bindTooltip(
-    "Minha localização",
-    {
-      direction: "top",
-    }
-  );
+  marker.bindTooltip("Minha localização", {
+    direction: "top",
+  });
 
-  state.navigation.currentLocationMarker =
-    marker;
+  state.navigation.currentLocationMarker = marker;
 }
 
 function locateUser() {
@@ -3278,13 +2944,10 @@ function locateUser() {
     } else if (error.code === 2) {
       showError(
         "Não foi possível determinar a tua localização. " +
-        "Verifica se o dispositivo tem localização disponível."
+          "Verifica se o dispositivo tem localização disponível.",
       );
     } else if (error.code === 3) {
-      showError(
-        "A localização demorou demasiado tempo. " +
-        "Tenta novamente."
-      );
+      showError("A localização demorou demasiado tempo. " + "Tenta novamente.");
     } else {
       showError("Não foi possível obter a tua localização.");
     }
