@@ -21,13 +21,42 @@ const CONFIG = {
   search: {
     maxResults: 50,
   },
+  
 };
+
+function decimalToDMS(decimal) {
+  decimal = ((decimal % 360) + 360) % 360;
+
+  const degrees = Math.floor(decimal);
+
+  const minutesDecimal = (decimal - degrees) * 60;
+
+  const minutes = Math.floor(minutesDecimal);
+
+  const seconds = (minutesDecimal - minutes) * 60;
+
+  return {
+    degrees,
+    minutes,
+    seconds,
+  };
+}
+
+function formatDMS(decimal) {
+  const dms = decimalToDMS(decimal);
+
+  return `${dms.degrees}° ` + `${dms.minutes}' ` + `${dms.seconds.toFixed(2)}"`;
+}
 
 const GEOLOCATION_OPTIONS = {
   enableHighAccuracy: true,
   timeout: 20000,
   maximumAge: 60000,
 };
+
+const NAVIGATION_ARRIVAL_DISTANCE = 5; // metros
+const NAVIGATION_DIRECTION_TOLERANCE = 35; // graus
+const NAVIGATION_MIN_MOVEMENT = 2; // metros
 
 /* =========================================================
    ESTADO DA APLICAÇÃO
@@ -41,6 +70,8 @@ const state = {
   basemaps: {},
 
   servicesLayer: null,
+
+  serviceFeatures: null,
 
   allFeatures: [],
 
@@ -69,15 +100,17 @@ async function initializeApp() {
   initializeMap();
   initializeEvents();
   loadGeoJSONData();
-  await getUserLocation();
-  handleNavigationStartLocation();
+  //await getUserLocation();
+  //handleNavigationStartLocation();
 }
 
 function handleNavigationStartLocation() {
   const point = state.navigation.currentLocation;
 
   if (!point) {
-    showError("Não foi possível obter a sua localização atual. Certifique de permitir a aplicação obter sua localização");
+    showError(
+      "Não foi possível obter a sua localização atual. Certifique de permitir a aplicação obter sua localização",
+    );
     return;
   }
 
@@ -266,7 +299,7 @@ async function loadGeoJSONData() {
     /*
      * Adiciona os dados às camadas.
      */
-
+    state.serviceFeatures = services;
     state.servicesLayer.addData(services);
 
     /*
@@ -864,12 +897,19 @@ function initializeEvents() {
     clearHighlight();
   });
 
+  const showOutsideLocationButton = document.getElementById(
+    "showOutsideLocation",
+  );
+
+  if (showOutsideLocationButton) {
+    showOutsideLocationButton.addEventListener("click", showOutsideLocation);
+  }
+
   // Mostra a caixa de navegação em tempo real
   showLiveNavigationBox();
 
   // NOVO:
   // Começa a acompanhar a posição GPS
-  startNavigationTracking();
 
   /*
    * Zoom +
@@ -952,6 +992,8 @@ function initializeEvents() {
       layersPanel.classList.add("hidden");
     }
   });
+
+  startNavigationTracking();
 }
 
 /* =========================================================
@@ -992,7 +1034,43 @@ function hideLiveNavigationBox() {
   state.navigation.navigationBox = null;
 }
 
+function getNavigationCenter(featureOrPoint) {
+  try {
+    if (
+      featureOrPoint &&
+      featureOrPoint.type === "Feature" &&
+      featureOrPoint.geometry &&
+      featureOrPoint.geometry.type === "Point"
+    ) {
+      return featureOrPoint;
+    }
+
+    return turf.centroid(featureOrPoint);
+  } catch (error) {
+    console.error("Erro ao calcular centro:", error);
+
+    return null;
+  }
+}
+
 function updateLiveNavigation(position) {
+  if (!state.serviceFeatures || state.serviceFeatures.features.length == 0) {
+    return;
+  }
+  const feature = state.serviceFeatures.features[0];
+
+  const point = getNavigationCenter(feature);
+
+  state.navigation.destination = {
+      point,
+
+      feature: feature,
+
+      title: feature.properties.uso,
+
+      type: feature.type,
+    };
+  
   if (!state.navigation.destination) {
     return;
   }
@@ -1484,7 +1562,6 @@ function renderCurrentLocation(point) {
 
 function getUserLocation() {
   return new Promise((resolve, reject) => {
-
     if (!navigator.geolocation) {
       showError("O teu navegador não suporta geolocalização.");
       reject(new Error("Geolocalização não suportada."));
@@ -1498,11 +1575,7 @@ function getUserLocation() {
     });
 
     state.map.once("locationfound", (event) => {
-
-      const currentPoint = turf.point([
-        event.latlng.lng,
-        event.latlng.lat
-      ]);
+      const currentPoint = turf.point([event.latlng.lng, event.latlng.lat]);
 
       state.navigation.currentLocation = currentPoint;
 
@@ -1510,7 +1583,6 @@ function getUserLocation() {
     });
 
     state.map.once("locationerror", (error) => {
-
       console.error("❌ Erro de geolocalização:", error);
       console.error("Código:", error.code);
       console.error("Mensagem:", error.message);
@@ -1520,12 +1592,11 @@ function getUserLocation() {
       } else if (error.code === 2) {
         showError(
           "Não foi possível determinar a tua localização. " +
-          "Verifica se o dispositivo tem localização disponível."
+            "Verifica se o dispositivo tem localização disponível.",
         );
       } else if (error.code === 3) {
         showError(
-          "A localização demorou demasiado tempo. " +
-          "Tenta novamente."
+          "A localização demorou demasiado tempo. " + "Tenta novamente.",
         );
       } else {
         showError("Não foi possível obter a tua localização.");
