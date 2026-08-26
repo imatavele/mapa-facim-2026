@@ -300,6 +300,7 @@ async function loadGeoJSONData() {
     );
   } finally {
     showLoading(false);
+    document.getElementById("zoomOutButton").click();
   }
 }
 

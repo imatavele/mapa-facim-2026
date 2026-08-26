@@ -293,7 +293,8 @@ async function loadGeoJSONData() {
     const limit = await limitResponse.json();
 
     let services = await servicesResponse.json();
-    services.features = services.features.filter(f => f.properties.name === "Emissão de Documentos");
+    //console.log(services.features)
+    services.features = services.features.filter(f => f.properties.name === "Unidade sanitária");
 
     state.navigation.limit = limit;
 
