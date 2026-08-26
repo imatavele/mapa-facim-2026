@@ -1045,7 +1045,6 @@ function getNavigationCenter(featureOrPoint) {
     ) {
       return featureOrPoint;
     }
-
     return turf.centroid(featureOrPoint);
   } catch (error) {
     console.error("Erro ao calcular centro:", error);
@@ -1055,13 +1054,12 @@ function getNavigationCenter(featureOrPoint) {
 }
 
 function nearestFeature(features) {
-
+  
   if (
     !features ||
     !features.length ||
-    !state.currentLocation
+    !state.navigation.currentLocation
   ) {
-    console.log(state.currentLocation)
     return null;
   }
 
@@ -1069,17 +1067,15 @@ function nearestFeature(features) {
   let minDistance = Infinity;
 
   features.forEach((feature) => {
-
     const center =
-      getNavigationCenter(feature);
-
+      getNavigationCenter(feature.feature ? feature.feature : feature);
     if (!center) {
       return;
     }
 
     const distance =
       turf.distance(
-        state.currentLocation,
+        state.navigation.currentLocation,
         center,
         {
           units: "meters",
@@ -1105,19 +1101,18 @@ function updateLiveNavigation(position) {
   if (!state.serviceFeatures || state.serviceFeatures.features.length == 0) {
     return;
   }
-  const feature = nearestFeature(state.serviceFeatures.features);
-
+  let feature = nearestFeature(state.serviceFeatures.features);
   if (feature) {
-    const point = getNavigationCenter(feature);
+    const point = feature.center;
 
     state.navigation.destination = {
       point,
 
-      feature: feature,
+      feature: feature.feature,
 
-      title: feature.properties.uso,
+      title: feature.feature.properties.uso,
 
-      type: feature.type,
+      type: feature.feature.type,
     };
 
     if (!state.navigation.destination) {

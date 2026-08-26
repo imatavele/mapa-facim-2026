@@ -9,7 +9,7 @@
 
 const CONFIG = {
   data: {
-    services: "../data/servicos.geojson",
+    services: "../data/wcs.geojson",
     limit: "../data/limite.geojson",
   },
 
@@ -21,7 +21,7 @@ const CONFIG = {
   search: {
     maxResults: 50,
   },
-  
+
 };
 
 function decimalToDMS(decimal) {
@@ -228,11 +228,11 @@ function initializeMap() {
 
   state.servicesLayer = L.geoJSON(null, {
     style: {
-      color: "#8b5cf6",
+      color: "#a855f7",
 
       weight: 1,
 
-      fillColor: "rgba(139, 92, 246, 0.25)",
+      fillColor: "rgba(168, 85, 247, 0.30)",
 
       fillOpacity: 0.12,
     },
@@ -293,8 +293,8 @@ async function loadGeoJSONData() {
     const limit = await limitResponse.json();
 
     let services = await servicesResponse.json();
-    services.features = services.features.filter(f => f.properties.name === "Quickbuild");
-
+    console.log(services.features)
+   
     state.navigation.limit = limit;
 
     /*
@@ -321,11 +321,11 @@ async function loadGeoJSONData() {
 
     showError(
       "Não foi possível carregar os dados do mapa. " +
-        "Verifique se os arquivos GeoJSON estão em /data/.",
+      "Verifique se os arquivos GeoJSON estão em /data/.",
     );
   } finally {
     showLoading(false);
-    document.getElementById("zoomOutButton").click();
+    //document.getElementById("zoomOutButton").click();
   }
 }
 
@@ -471,15 +471,14 @@ function renderSearchResults(results) {
                     ${escapeHTML(item.type)}
                 </div>
 
-                ${
-                  detail
-                    ? `
+                ${detail
+        ? `
                     <div class="result-detail">
                         ${escapeHTML(detail)}
                     </div>
                     `
-                    : ""
-                }
+        : ""
+      }
 
             `;
 
@@ -1046,7 +1045,6 @@ function getNavigationCenter(featureOrPoint) {
     ) {
       return featureOrPoint;
     }
-
     return turf.centroid(featureOrPoint);
   } catch (error) {
     console.error("Erro ao calcular centro:", error);
@@ -1055,54 +1053,99 @@ function getNavigationCenter(featureOrPoint) {
   }
 }
 
+function nearestFeature(features) {
+  
+  if (
+    !features ||
+    !features.length ||
+    !state.navigation.currentLocation
+  ) {
+    return null;
+  }
+
+  let nearest = null;
+  let minDistance = Infinity;
+
+  features.forEach((feature) => {
+    const center =
+      getNavigationCenter(feature.feature ? feature.feature : feature);
+    if (!center) {
+      return;
+    }
+
+    const distance =
+      turf.distance(
+        state.navigation.currentLocation,
+        center,
+        {
+          units: "meters",
+        }
+      );
+
+    if (distance < minDistance) {
+
+      minDistance = distance;
+
+      nearest = {
+        feature,
+        center,
+        distance,
+      };
+    }
+  });
+
+  return nearest;
+}
+
 function updateLiveNavigation(position) {
   if (!state.serviceFeatures || state.serviceFeatures.features.length == 0) {
     return;
   }
-  const feature = state.serviceFeatures.features[0];
+  let feature = nearestFeature(state.serviceFeatures.features);
+  if (feature) {
+    const point = feature.center;
 
-  const point = getNavigationCenter(feature);
-
-  state.navigation.destination = {
+    state.navigation.destination = {
       point,
 
-      feature: feature,
+      feature: feature.feature,
 
-      title: feature.properties.uso,
+      title: feature.feature.properties.uso,
 
-      type: feature.type,
+      type: feature.feature.type,
     };
-  
-  if (!state.navigation.destination) {
-    return;
+
+    if (!state.navigation.destination) {
+      return;
+    }
+
+    const currentPoint = turf.point([
+      position.coords.longitude,
+      position.coords.latitude,
+    ]);
+
+    const destination = state.navigation.destination.point;
+
+    // Distância atual até ao destino
+    const distanceMeters = turf.distance(currentPoint, destination, {
+      units: "meters",
+    });
+
+    // Verifica chegada
+    if (distanceMeters <= NAVIGATION_ARRIVAL_DISTANCE) {
+      handleNavigationArrival(distanceMeters);
+
+      return;
+    }
+
+    // Bearing da posição atual para o destino
+    const destinationBearing = turf.bearing(currentPoint, destination);
+
+    updateLiveNavigationDisplay(distanceMeters, destinationBearing, position);
+
+    // Guarda posição atual
+    state.navigation.currentLocation = currentPoint;
   }
-
-  const currentPoint = turf.point([
-    position.coords.longitude,
-    position.coords.latitude,
-  ]);
-
-  const destination = state.navigation.destination.point;
-
-  // Distância atual até ao destino
-  const distanceMeters = turf.distance(currentPoint, destination, {
-    units: "meters",
-  });
-
-  // Verifica chegada
-  if (distanceMeters <= NAVIGATION_ARRIVAL_DISTANCE) {
-    handleNavigationArrival(distanceMeters);
-
-    return;
-  }
-
-  // Bearing da posição atual para o destino
-  const destinationBearing = turf.bearing(currentPoint, destination);
-
-  updateLiveNavigationDisplay(distanceMeters, destinationBearing, position);
-
-  // Guarda posição atual
-  state.navigation.currentLocation = currentPoint;
 }
 
 function handleNavigationArrival(distanceMeters) {
@@ -1594,7 +1637,7 @@ function getUserLocation() {
       } else if (error.code === 2) {
         showError(
           "Não foi possível determinar a tua localização. " +
-            "Verifica se o dispositivo tem localização disponível.",
+          "Verifica se o dispositivo tem localização disponível.",
         );
       } else if (error.code === 3) {
         showError(
@@ -1647,7 +1690,7 @@ function locateUser() {
     } else if (error.code === 2) {
       showError(
         "Não foi possível determinar a tua localização. " +
-          "Verifica se o dispositivo tem localização disponível.",
+        "Verifica se o dispositivo tem localização disponível.",
       );
     } else if (error.code === 3) {
       showError("A localização demorou demasiado tempo. " + "Tenta novamente.");
